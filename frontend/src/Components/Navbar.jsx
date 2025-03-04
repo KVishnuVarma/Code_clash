@@ -26,6 +26,9 @@ const Navbar = () => {
           <Link to="/contests" className="hover:text-[#00D8FF] transition-all">Contests</Link>
           <Link to="/leaderboard" className="hover:text-[#00D8FF] transition-all">Leaderboard</Link>
           {user && <Link to="/profile" className="hover:text-[#00D8FF] transition-all">Profile</Link>}
+          {user?.role === "admin" && (
+            <Link to="/admin" className="hover:text-[#FFD700] transition-all font-semibold">Admin Panel</Link>
+          )}
           <div className="ml-4">
             {!user ? (
               <Link 
@@ -58,6 +61,9 @@ const Navbar = () => {
           <Link to="/contests" className="hover:text-[#00D8FF] transition-all" onClick={() => setIsOpen(false)}>Contests</Link>
           <Link to="/leaderboard" className="hover:text-[#00D8FF] transition-all" onClick={() => setIsOpen(false)}>Leaderboard</Link>
           {user && <Link to="/profile" className="hover:text-[#00D8FF] transition-all" onClick={() => setIsOpen(false)}>Profile</Link>}
+          {user?.role === "admin" && (
+            <Link to="/admin" className="hover:text-[#FFD700] transition-all font-semibold" onClick={() => setIsOpen(false)}>Admin Panel</Link>
+          )}
           <div className="mt-4">
             {!user ? (
               <Link 

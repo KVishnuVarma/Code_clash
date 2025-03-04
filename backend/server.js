@@ -12,7 +12,7 @@ const app = express();
         await connectDB();
         console.log('✅ MongoDB Connected Successfully');
     } catch (err) {
-        console.error('❌ MongoDB Connection Failed:', err);
+        console.error('❌ MongoDB Connection Failed:', err.message);
         process.exit(1);
     }
 })();
@@ -20,7 +20,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*', // Restrict access to frontend URL
+    origin: process.env.FRONTEND_URL?.split(',') || '*', // Allow multiple frontend URLs
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -53,11 +53,11 @@ app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
 // Handle Uncaught Errors
 process.on('unhandledRejection', (err) => {
-    console.error('❌ Unhandled Promise Rejection:', err);
+    console.error('❌ Unhandled Promise Rejection:', err.message);
     process.exit(1);
 });
 
 process.on('uncaughtException', (err) => {
-    console.error('❌ Uncaught Exception:', err);
+    console.error('❌ Uncaught Exception:', err.message);
     process.exit(1);
 });

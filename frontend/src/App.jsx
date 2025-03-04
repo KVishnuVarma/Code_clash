@@ -8,6 +8,8 @@ import Contests from "./Pages/Contests";
 import Leaderboard from "./Pages/Leaderboard";
 import Profile from "./Pages/Profile";
 import Login from "./Pages/Login";
+import Register from "./Pages/Register"; // ✅ Import Register Page
+import AdminPage from "./Pages/Admin"; // ✅ Import AdminPage
 
 export default function App() {
   return (
@@ -18,11 +20,11 @@ export default function App() {
         <Route path="/contests" element={<Contests />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />  {/* ✅ Added Register Route */}
 
-        {/* Protected Route */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/profile" element={<Profile />} />
-        </Route>
+        {/* Protected Routes */}
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
       </Routes>
       <Footer />
     </>

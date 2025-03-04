@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", userData.token); // Store token securely
   };
 
   // Logout function
@@ -28,8 +29,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token"); // Ensure token is removed on logout
   };
 
+  // Check if user is admin
+  const isAdmin = user?.role === "admin";
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
