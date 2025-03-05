@@ -16,6 +16,7 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
@@ -23,15 +24,22 @@ const Register = () => {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonError) {
+        throw new Error("Invalid response from server");
+      }
+
       if (!res.ok) {
         throw new Error(data.message || "Registration failed");
       }
 
       console.log("✅ Registered successfully:", data);
-      setTimeout(() => navigate("/login"), 2000);
+      setLoading(false);
+      navigate("/login");
     } catch (error) {
-      console.error("❌ Error registering:", error);
+      console.error("❌ Error registering:", error.message);
       setError(error.message);
       setLoading(false);
     }
@@ -39,8 +47,7 @@ const Register = () => {
 
   const handleGoogleSignup = () => {
     setLoading(true);
-    const googleAuthURL = "http://localhost:5000/api/auth/github"; // Update with actual backend route
-    window.open(googleAuthURL, "_self");
+    window.location.href = "http://localhost:5000/api/auth/google";
   };
 
   return (
