@@ -1,13 +1,11 @@
 import React, { useState } from "react";
+import googleIcon from "../assets/google-icon.png";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,37 +14,48 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
     try {
       const res = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData), // Fix: Pass the entire formData object
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to register");
+        throw new Error(data.message || "Registration failed");
       }
 
-      const data = await res.json();
       console.log("✅ Registered successfully:", data);
-
-      // Redirect to login page after successful registration
-      navigate("/login");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       console.error("❌ Error registering:", error);
       setError(error.message);
+      setLoading(false);
     }
   };
 
+  const handleGoogleSignup = () => {
+    setLoading(true);
+    const googleAuthURL = "http://localhost:5000/api/auth/github"; // Update with actual backend route
+    window.open(googleAuthURL, "_self");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500">
-      <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Register
-        </h2>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700">
+      <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-gray-700 rounded-full animate-bounce"></div>
+              <div className="w-3 h-3 bg-gray-700 rounded-full animate-bounce delay-200"></div>
+              <div className="w-3 h-3 bg-gray-700 rounded-full animate-bounce delay-400"></div>
+            </div>
+          </div>
+        )}
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Register</h2>
         {error && <p className="text-red-500 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -56,7 +65,7 @@ const Register = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <input
             type="email"
@@ -65,7 +74,7 @@ const Register = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <input
             type="password"
@@ -74,20 +83,28 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <button
             type="submit"
-            className="w-full p-3 bg-purple-600 text-white font-bold rounded-md hover:bg-purple-700 transition"
+            disabled={loading}
+            className="w-full p-3 bg-gray-600 text-white font-bold rounded-md hover:bg-gray-700 transition"
           >
             Register
           </button>
         </form>
-        <p className="text-center text-gray-600 mt-4">
-          Already have an account?{" "}
-          <a href="/login" className="text-purple-500">
-            Login here
-          </a>
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={handleGoogleSignup}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 border rounded-md bg-gray-100 hover:bg-gray-200 transition"
+          >
+            <img src={googleIcon} alt="Google" className="w-5 h-5" />
+            <span>Sign up with Google</span>
+          </button>
+        </div>
+        <p className="text-center text-gray-400 mt-4">
+          Already have an account? <a href="/login" className="text-gray-600 hover:text-black">Login here</a>
         </p>
       </div>
     </div>
