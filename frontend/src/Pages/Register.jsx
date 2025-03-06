@@ -107,7 +107,7 @@ const Register = () => {
             className="flex items-center gap-2 px-4 py-2 border rounded-md bg-gray-100 hover:bg-gray-200 transition"
           >
             <img src={googleIcon} alt="Google" className="w-5 h-5" />
-            <span>Sign up with Google</span>
+            <span></span>
           </button>
         </div>
         <p className="text-center text-gray-400 mt-4">

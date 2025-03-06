@@ -1,23 +1,35 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (!success) {
+      const user = await login(email, password);
+      if (user && user.isAdmin !== undefined) {
+        console.log("User Data:", user); // Debugging log
+        setTimeout(() => {
+          navigate(user.isAdmin ? "/admin" : "/user-dashboard");
+        }, 2000);
+      } else {
         setError("Invalid email or password.");
+        setLoading(false);
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -49,11 +61,27 @@ const Login = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg transition duration-200"
+            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg transition duration-200 flex items-center justify-center"
+            disabled={loading}
           >
-            Login
+            {loading ? (
+              <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
+
+        {/* Register Button */}
+        <p className="text-center text-gray-600 mt-4">
+          Don't have an account?{" "}
+          <button
+            onClick={() => navigate("/register")}
+            className="text-indigo-500 hover:underline"
+          >
+            Register
+          </button>
+        </p>
       </div>
     </div>
   );

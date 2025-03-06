@@ -10,8 +10,7 @@ import Leaderboard from "./Pages/Leaderboard";
 import Profile from "./Pages/Profile";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
-import AdminDashboard from "./admin/AdminDashboard"; // ✅ Correct Admin Dashboard Page
-
+import AdminDashboard from "./admin/AdminDashboard";
 export default function App() {
   return (
     <>
