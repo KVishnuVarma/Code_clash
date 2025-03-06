@@ -11,6 +11,7 @@ import Profile from "./Pages/Profile";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import AdminDashboard from "./admin/AdminDashboard";
+import Users from "./admin/Users";
 export default function App() {
   return (
     <>
@@ -27,6 +28,10 @@ export default function App() {
 
         {/* Admin Protected Routes */}
         <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin-dashboard/users" element={<AdminRoute><Users /></AdminRoute>} />
+        <Route path="/admin-dashboard/contests" element={<AdminRoute><Contests /></AdminRoute>} />
+        <Route path="/admin-dashboard/problems" element={<AdminRoute><Contests /></AdminRoute>} />
+        <Route path="/admin-dashboard/leaderboard" element={<AdminRoute><Leaderboard /></AdminRoute>} />
       </Routes>
       <Footer />
     </>

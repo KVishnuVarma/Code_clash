@@ -16,7 +16,7 @@ const AdminDashboard = () => {
         <DashboardCard
           title="Manage Users"
           description="View, edit, and manage user accounts."
-          to="/admin/users"
+          to="/admin-dashboard/users"
           icon={<Users size={32} />}
         />
 
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
         <DashboardCard
           title="Manage Contests"
           description="Create and update coding contests."
-          to="/admin/contests"
+          to="/admin-dashboard/contests"
           icon={<Trophy size={32} />}
         />
 
@@ -32,7 +32,7 @@ const AdminDashboard = () => {
         <DashboardCard
           title="Manage Problems"
           description="Add, edit, and organize coding problems."
-          to="/admin/problems"
+          to="/admin-dashboard/problems"
           icon={<List size={32} />}
         />
 
@@ -40,7 +40,7 @@ const AdminDashboard = () => {
         <DashboardCard
           title="Leaderboard"
           description="Track top performers in contests."
-          to="/admin/leaderboard"
+          to="/admin-dashboard/leaderboard"
           icon={<BarChart size={32} />}
         />
 
