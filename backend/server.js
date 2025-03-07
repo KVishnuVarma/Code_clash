@@ -13,7 +13,7 @@ const app = express();
 (async () => {
     try {
         await connectDB();
-        console.log("\u2705 MongoDB Connected Successfully");
+        // console.log("\u2705 MongoDB Connected Successfully");
     } catch (err) {
         console.error("\u274C MongoDB Connection Failed:", err.message);
         process.exit(1);
@@ -23,15 +23,20 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: process.env.FRONTEND_URL?.split(",") || "*", // Allow multiple frontend URLs
+    origin: process.env.FRONTEND_URL?.split(",") || "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+    credentials: true,
+   allowedHeaders: ["Content-Type", "x-auth-token"],
+   allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"]
 }));
+
+
 
 app.use(session({
     secret: process.env.SESSION_SECRET || "your_secret_key",
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === "production", httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 app.use(passport.initialize());
@@ -45,9 +50,13 @@ passport.use(
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
             callbackURL: process.env.GITHUB_CALLBACK_URL
         },
-        (accessToken, refreshToken, profile, done) => {
-            console.log("GitHub Profile:", profile);
-            return done(null, profile);
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                console.log("GitHub Profile:", profile);
+                return done(null, profile);
+            } catch (error) {
+                return done(error, null);
+            }
         }
     )
 );
