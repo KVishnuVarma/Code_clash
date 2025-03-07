@@ -1,6 +1,5 @@
-const Submission = require('../models/Submission'); // Ensure the model file exists
+const Submission = require('../models/Submission');
 
-// Get all submissions
 exports.getAllSubmissions = async (req, res) => {
     try {
         const submissions = await Submission.find();
@@ -10,7 +9,6 @@ exports.getAllSubmissions = async (req, res) => {
     }
 };
 
-// Get submissions by user ID
 exports.getSubmissionsByUserId = async (req, res) => {
     try {
         const submissions = await Submission.find({ userId: req.params.userId });
@@ -20,7 +18,6 @@ exports.getSubmissionsByUserId = async (req, res) => {
     }
 };
 
-// Get submission by ID
 exports.getSubmissionById = async (req, res) => {
     try {
         const submission = await Submission.findById(req.params.id);
@@ -31,7 +28,6 @@ exports.getSubmissionById = async (req, res) => {
     }
 };
 
-// Create a new submission
 exports.createSubmission = async (req, res) => {
     try {
         const submission = new Submission(req.body);

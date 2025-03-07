@@ -10,8 +10,8 @@ const UserSchema = new mongoose.Schema({
     password: String,
     points: { type: Number, default: 0 },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
-    isSuspended: { type: Boolean, default: false },  // Admin can suspend users
-    activityLog: [{ type: String, default: [] }]  // Store user actions
+    isSuspended: { type: Boolean, default: false },
+    activityLog: [{ type: String, default: [] }]
 });
 
 module.exports = mongoose.model("User", UserSchema);

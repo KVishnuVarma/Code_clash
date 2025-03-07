@@ -5,14 +5,10 @@ import { Users, Trophy, List, BarChart, LogOut } from "lucide-react";
 const AdminDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 p-6">
-      {/* Dashboard Title */}
       <h1 className="text-4xl font-extrabold text-white mb-10 drop-shadow-lg animate-fadeIn">
         Admin Dashboard
       </h1>
-
-      {/* Dashboard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
-        {/* Manage Users */}
         <DashboardCard
           title="Manage Users"
           description="View, edit, and manage user accounts."
@@ -20,7 +16,6 @@ const AdminDashboard = () => {
           icon={<Users size={32} />}
         />
 
-        {/* Manage Contests */}
         <DashboardCard
           title="Manage Contests"
           description="Create and update coding contests."
@@ -28,7 +23,6 @@ const AdminDashboard = () => {
           icon={<Trophy size={32} />}
         />
 
-        {/* Manage Problems */}
         <DashboardCard
           title="Manage Problems"
           description="Add, edit, and organize coding problems."
@@ -36,7 +30,6 @@ const AdminDashboard = () => {
           icon={<List size={32} />}
         />
 
-        {/* View Leaderboard */}
         <DashboardCard
           title="Leaderboard"
           description="Track top performers in contests."
@@ -44,11 +37,10 @@ const AdminDashboard = () => {
           icon={<BarChart size={32} />}
         />
 
-        {/* Logout */}
         <DashboardCard
           title="Logout"
           description="Exit admin panel securely."
-          to="/login" // Fixed redirection to login page
+          to="/login"
           icon={<LogOut size={32} />}
           customClass="bg-gray-500 text-white"
         />
@@ -57,7 +49,6 @@ const AdminDashboard = () => {
   );
 };
 
-// Reusable Dashboard Card Component with Click Loading Animation
 const DashboardCard = ({ title, description, to, icon, customClass = "" }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -67,7 +58,7 @@ const DashboardCard = ({ title, description, to, icon, customClass = "" }) => {
     setLoading(true);
     setTimeout(() => {
       navigate(to);
-    }, 2000); // 2-second delay before redirection
+    }, 2000);
   };
 
   return (

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import googleIcon from "../assets/google-icon.png";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
@@ -106,8 +105,6 @@ const Register = () => {
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 border rounded-md bg-gray-100 hover:bg-gray-200 transition"
           >
-            <img src={googleIcon} alt="Google" className="w-5 h-5" />
-            <span></span>
           </button>
         </div>
         <p className="text-center text-gray-400 mt-4">

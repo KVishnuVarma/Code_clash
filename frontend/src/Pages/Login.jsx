@@ -18,7 +18,7 @@ const Login = () => {
     try {
       const user = await login(email, password);
       if (user && user.isAdmin !== undefined) {
-        console.log("User Data:", user); // Debugging log
+        console.log("User Data:", user);
         setTimeout(() => {
           navigate(user.isAdmin ? "/admin" : "/user-dashboard");
         }, 2000);

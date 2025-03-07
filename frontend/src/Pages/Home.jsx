@@ -9,7 +9,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
-      {/* Background Image Overlay with Motion */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.2 }}
@@ -24,7 +23,6 @@ const Home = () => {
         transition={{ duration: 1 }}
         className="flex flex-col md:flex-row items-center justify-between w-full max-w-6xl relative z-10"
       >
-        {/* Left Side - Animated Logo */}
         <motion.img
           src={codeclashLogo}
           alt="CodeClash Logo"
@@ -33,8 +31,6 @@ const Home = () => {
           animate={{ scale: 1, y: [0, -10, 0] }}
           transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse" }}
         />
-
-        {/* Right Side - Welcome Text */}
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -58,7 +54,6 @@ const Home = () => {
         </motion.div>
       </motion.div>
 
-      {/* CodeClash Overview Section */}
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,7 +64,6 @@ const Home = () => {
           CodeClash Overview
         </h2>
 
-        {/* Steps Layout */}
         <div className="space-y-10">
           {[
             {

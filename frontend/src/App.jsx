@@ -23,10 +23,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* User Protected Routes */}
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-        {/* Admin Protected Routes */}
         <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin-dashboard/users" element={<AdminRoute><Users /></AdminRoute>} />
         <Route path="/admin-dashboard/contests" element={<AdminRoute><Contests /></AdminRoute>} />

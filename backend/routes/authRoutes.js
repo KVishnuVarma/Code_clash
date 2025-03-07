@@ -6,7 +6,6 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// Middleware to verify JWT and extract user info
 const authMiddleware = (req, res, next) => {
     const token = req.header("x-auth-token");
     if (!token) {
@@ -15,13 +14,12 @@ const authMiddleware = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
-        next(); // Ensure request proceeds
+        next();
     } catch (error) {
         return res.status(401).json({ message: "Invalid token" });
     }
 };
 
-// Admin Middleware
 const adminMiddleware = (req, res, next) => {
     if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({ message: "Access denied. Admins only." });
@@ -29,8 +27,6 @@ const adminMiddleware = (req, res, next) => {
     next();
 };
 
-// @route    POST /api/auth/register
-// @desc     Register a new user
 router.post('/register', [
     check('name', 'Name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
@@ -74,8 +70,6 @@ router.post('/register', [
     }
 });
 
-// @route    POST /api/auth/login
-// @desc     Authenticate user & get token
 router.post('/login', [
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Password is required').exists()
@@ -117,8 +111,6 @@ router.post('/login', [
     }
 });
 
-// @route    GET /api/auth/user
-// @desc     Get user details (Requires authentication)
 router.get('/user', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -132,8 +124,6 @@ router.get('/user', authMiddleware, async (req, res) => {
     }
 });
 
-// @route    GET /api/auth/admin/users
-// @desc     Get all users (Admin only)
 router.get('/admin/users', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const users = await User.find().select('-password');
@@ -144,8 +134,6 @@ router.get('/admin/users', authMiddleware, adminMiddleware, async (req, res) => 
     }
 });
 
-// @route    PUT /api/auth/admin/suspend/:userId
-// @desc     Suspend or unsuspend a user (Admin only)
 router.put('/admin/suspend/:userId', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
@@ -170,8 +158,6 @@ router.put('/admin/suspend/:userId', authMiddleware, adminMiddleware, async (req
     }
 });
 
-// @route    GET /api/auth/admin
-// @desc     Protected admin route
 router.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         res.json({ message: "Welcome, Admin!" });

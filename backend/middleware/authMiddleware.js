@@ -1,44 +1,45 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// ✅ Middleware to authenticate users (Regular + Admin)
 const authenticateUser = async (req, res, next) => {
-    let token = req.header("x-auth-token") || req.header("Authorization");
-
-    if (!token) {
-        return res.status(401).json({ error: "Access Denied! No Token Provided" });
-    }
-
     try {
-        // Support both "Bearer <TOKEN>" and raw token
-        if (token.startsWith("Bearer ")) {
-            token = token.split(" ")[1]; 
+        let token = req.header("x-auth-token") || req.header("Authorization");
+
+        if (!token) {
+            return res.status(401).json({ error: "Access Denied! No Token Provided" });
         }
 
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = verified;
+        if (token.startsWith("Bearer ")) {
+            token = token.split(" ")[1];
+        }
 
-        // Fetch user details from DB to check status
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = decoded;
+
         const user = await User.findById(req.user.id);
 
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // 🚨 Check if the user is suspended
         if (user.isSuspended) {
             return res.status(403).json({ error: "Your account is suspended. Contact admin." });
         }
 
+        req.user.role = user.role;
         next();
     } catch (err) {
-        return res.status(400).json({ error: "Invalid Token" });
+        return res.status(401).json({ error: "Invalid or Expired Token" });
     }
 };
 
-// ✅ Middleware to allow only Admins
 const adminMiddleware = async (req, res, next) => {
     try {
+        if (!req.user) {
+            return res.status(401).json({ error: "Unauthorized. Please log in again." });
+        }
+
         const user = await User.findById(req.user.id);
 
         if (!user || user.role !== "admin") {

@@ -53,9 +53,9 @@ export const AuthProvider = ({ children }) => {
             setRole(data.user.role);
 
             if (data.user.role === "admin") {
-                navigate("/admin-dashboard");  // ✅ Redirect admin
+                navigate("/admin-dashboard");
             } else {
-                navigate("/");  // ✅ Redirect regular user
+                navigate("/");
             }
 
             return true;

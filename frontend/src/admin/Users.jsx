@@ -51,6 +51,7 @@ const Users = () => {
     const toggleSuspendUser = async (userId, isSuspended) => {
         try {
             const token = localStorage.getItem("token");
+            console.log(token);
 
             if (!token) {
                 alert("Access Denied! No Token Provided. Please log in.");
@@ -58,7 +59,7 @@ const Users = () => {
                 return;
             }
 
-            const res = await fetch(`http://localhost:5000/api/admin/suspend-user/${userId}`, { 
+            const res = await fetch(`http://localhost:5000/api/admin/unsuspend-user/${userId}`, { 
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -91,7 +92,7 @@ const Users = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white flex flex-col items-center p-6">
-            <h2 className="text-4xl font-extrabold mb-6 text-center">Admin User Manager</h2>
+            <h2 className="text-4xl font-extrabold mb-6 text-center">Admin Access Center</h2>
             <div className="w-full max-w-5xl overflow-x-auto bg-gray-800 p-4 rounded-lg shadow-xl">
                 <table className="w-full border-collapse border border-gray-600 shadow-md rounded-lg">
                     <thead>
@@ -99,6 +100,8 @@ const Users = () => {
                             <th className="border border-gray-600 px-4 py-2">Name</th>
                             <th className="border border-gray-600 px-4 py-2">Email</th>
                             <th className="border border-gray-600 px-4 py-2">Role</th>
+                            <th className="border border-gray-600 px-4 py-2">Problems Solved</th>
+                            <th className="border border-gray-600 px-4 py-2">Contests Participated</th>
                             <th className="border border-gray-600 px-4 py-2">Activity Log</th>
                             <th className="border border-gray-600 px-4 py-2">Status</th>
                             <th className="border border-gray-600 px-4 py-2">Actions</th>
@@ -111,6 +114,8 @@ const Users = () => {
                                     <td className="border border-gray-600 px-4 py-2">{user.name}</td>
                                     <td className="border border-gray-600 px-4 py-2">{user.email}</td>
                                     <td className="border border-gray-600 px-4 py-2">{user.role}</td>
+                                    <td className="border border-gray-600 px-4 py-2">{user.problemsSolved || 0}</td>
+                                    <td className="border border-gray-600 px-4 py-2">{user.contestsParticipated || 0}</td>
                                     <td className="border border-gray-600 px-4 py-2">
                                         {user.activityLog && user.activityLog.length > 0 ? (
                                             <ul className="list-disc text-left pl-5 text-gray-400">
@@ -145,7 +150,7 @@ const Users = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="text-center text-gray-400 py-4">
+                                <td colSpan="8" className="text-center text-gray-400 py-4">
                                     No users found.
                                 </td>
                             </tr>
