@@ -71,6 +71,7 @@ app.get(
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/contest", require("./routes/ContestRoutes"));
 app.use("/api/problems", require("./routes/problemRoutes"));
 app.use("/api/submissions", require("./routes/submissionRoutes"));
 
