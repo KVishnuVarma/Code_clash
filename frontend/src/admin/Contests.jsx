@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import "react-datepicker/dist/react-datepicker.css";
 
 const ManageContests = () => {
   const [contests, setContests] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [expanded, setExpanded] = useState({}); // State to track expanded questions
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -15,11 +18,8 @@ const ManageContests = () => {
     status: "Upcoming",
     allowedLanguages: "",
     maxAttempts: "",
-    problems: [
-      { question: "", options: ["", "", "", ""], correctOption: null },
-    ],
+    problems: [{ question: "", options: ["", "", "", ""], correctOption: 0 }],
   });
-  console.log(form)
 
   const fetchContests = async () => {
     try {
@@ -32,9 +32,7 @@ const ManageContests = () => {
       if (!Array.isArray(data)) throw new Error("Invalid response format");
 
       setContests(data);
-      console.log(data)
     } catch (error) {
-      console.log(error)
       console.error("Error fetching contests:", error.message);
     }
   };
@@ -63,43 +61,47 @@ const ManageContests = () => {
       ],
     }));
   };
+
+  const toggleOptions = (index) => {
+    setExpanded((prev) => ({
+      ...prev,
+      [index]: !prev[index], // Toggle expanded state for the question
+    }));
+  };
+
   const handleQuestionChange = (qIndex, field, value) => {
     setForm((prevForm) => {
-      const updatedproblems = [...prevForm.problems];
-      updatedproblems[qIndex] = {
-        ...updatedproblems[qIndex],
+      const updatedProblems = [...prevForm.problems];
+      updatedProblems[qIndex] = {
+        ...updatedProblems[qIndex],
         [field]: value,
       };
-      return { ...prevForm, problems: updatedproblems };
+      return { ...prevForm, problems: updatedProblems };
     });
   };
 
   const handleOptionChange = (qIndex, optIndex, value) => {
-    const updatedproblems = [...form.problems];
-    updatedproblems[qIndex].options[optIndex] = value;
-    setForm((prevForm) => ({ ...prevForm, problems: updatedproblems }));
+    const updatedProblems = [...form.problems];
+    updatedProblems[qIndex].options[optIndex] = value;
+    setForm((prevForm) => ({ ...prevForm, problems: updatedProblems }));
   };
 
   const handleCorrectOptionChange = (qIndex, optIndex) => {
-    const updatedproblems = [...form.problems];
-    updatedproblems[qIndex].correctOption = optIndex;
-    setForm((prevForm) => ({ ...prevForm, problems: updatedproblems }));
+    const updatedProblems = [...form.problems];
+    updatedProblems[qIndex].correctOption = optIndex;
+    setForm((prevForm) => ({ ...prevForm, problems: updatedProblems }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/contest",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/contest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-      const data = await response.json();
-      console.log("data" , data)
+      await response.json();
       alert("Contest created successfully!");
       fetchContests();
       setForm({
@@ -160,33 +162,42 @@ const ManageContests = () => {
           className="w-full p-3 mb-3 border rounded bg-gray-700 text-white"
         />
 
-        <label className="text-gray-300">Start Time</label>
-        <DatePicker
-          selected={form.startTime}
-          onChange={(date) => setForm({ ...form, startTime: date })}
-          showTimeSelect
-          dateFormat="Pp"
-          className="w-full p-3 mb-3 border rounded bg-gray-700 text-white"
-        />
+        <div className="flex items-center gap-9 mb-3">
+          {/* Start Time */}
+          <div className="w-1/2 flex flex-col">
+            <label className="text-gray-300 mb-2">Start Time</label>
+            <DatePicker
+              selected={form.startTime}
+              onChange={(date) => setForm({ ...form, startTime: date })}
+              showTimeSelect
+              dateFormat="Pp"
+              className="w-full p-4 mt-2 border rounded bg-gray-700 text-white"
+            />
+          </div>
 
-        <label className="text-gray-300">End Time</label>
-        <DatePicker
-          selected={form.endTime}
-          onChange={(date) => setForm({ ...form, endTime: date })}
-          showTimeSelect
-          dateFormat="Pp"
-          className="w-full p-3 mb-3 border rounded bg-gray-700 text-white"
-        />
+          {/* End Time */}
+          <div className="w-1/2 flex flex-col">
+            <label className="text-gray-300 mb-2">End Time</label>
+            <DatePicker
+              selected={form.endTime}
+              onChange={(date) => setForm({ ...form, endTime: date })}
+              showTimeSelect
+              dateFormat="Pp"
+              className="w-full p-4 mt-2 border rounded bg-gray-700 text-white"
+            />
+          </div>
+        </div>
 
-        <input
-          type="text"
+        <select
           name="difficulty"
-          placeholder="Difficulty"
           value={form.difficulty}
           onChange={handleChange}
-          required
           className="w-full p-3 mb-3 border rounded bg-gray-700 text-white"
-        />
+        >
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
         <textarea
           name="rules"
           placeholder="Rules"
@@ -234,36 +245,57 @@ const ManageContests = () => {
 
         {form.problems.map((q, qIndex) => (
           <div key={qIndex} className="mb-3 bg-gray-700 p-3 rounded-lg">
-            <input
-              type="text"
-              placeholder="Question"
-              value={q.question}
-              onChange={(e) =>
-                handleQuestionChange(qIndex, "question", e.target.value)
-              }
-              className="w-full p-2 border rounded bg-gray-800 text-white mb-2"
-            />
+            {/* Question Input with Arrow Button */}
+            <div className="flex justify-between items-center">
+              <input
+                type="text"
+                placeholder="Question"
+                value={q.question}
+                onChange={(e) =>
+                  handleQuestionChange(qIndex, "question", e.target.value)
+                }
+                className="w-full p-2 border rounded bg-gray-800 text-white"
+              />
+              {/* Toggle Button */}
+              <button
+                type="button" // <-- Prevents accidental form submission
+                onClick={(e) => {
+                  e.stopPropagation(); // <-- Stops event bubbling
+                  toggleOptions(qIndex);
+                }}
+                className="ml-2 text-white p-2 rounded-full bg-gray-600 hover:bg-gray-500 transition"
+              >
+                {expanded[qIndex] ? <FaChevronUp /> : <FaChevronDown />}
+              </button>
+            </div>
 
-            {q.options.map((option, optIndex) => (
-              <div key={optIndex} className="flex items-center mb-2">
-                <input
-                  type="text"
-                  placeholder={`Option ${optIndex + 1}`}
-                  value={option}
-                  onChange={(e) =>
-                    handleOptionChange(qIndex, optIndex, e.target.value)
-                  }
-                  className="w-full p-2 border rounded bg-gray-800 text-white mr-2"
-                />
-                <input
-                  type="radio"
-                  name={`correctOption-${qIndex}`}
-                  checked={q.correctOption === optIndex}
-                  onChange={() => handleCorrectOptionChange(qIndex, optIndex)}
-                  className="w-5 h-5"
-                />
+            {/* Options Section (Hidden when collapsed) */}
+            {expanded[qIndex] && (
+              <div className="mt-2">
+                {q.options.map((option, optIndex) => (
+                  <div key={optIndex} className="flex items-center mb-2">
+                    <input
+                      type="text"
+                      placeholder={`Option ${optIndex + 1}`}
+                      value={option}
+                      onChange={(e) =>
+                        handleOptionChange(qIndex, optIndex, e.target.value)
+                      }
+                      className="w-full p-2 border rounded bg-gray-800 text-white mr-2"
+                    />
+                    <input
+                      type="radio"
+                      name={`correctOption-${qIndex}`}
+                      checked={q.correctOption === optIndex}
+                      onChange={() =>
+                        handleCorrectOptionChange(qIndex, optIndex)
+                      }
+                      className="w-5 h-5"
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         ))}
 
@@ -286,11 +318,25 @@ const ManageContests = () => {
         <tbody>
           {getFilteredContests().map((contest, index) => (
             <tr key={index} className="bg-gray-700 hover:bg-gray-600">
-              <td className="p-3 border border-gray-600">{contest.title}</td>
-              <td className="p-3 border border-gray-600">
+              {/* Title - Truncated with Tooltip */}
+              <td
+                className="p-5 border border-gray-600 max-w-[200px] truncate"
+                title={contest.title} // Tooltip to show full title on hover
+              >
+                {contest.title.length > 30
+                  ? `${contest.title.substring(0, 30)}...`
+                  : contest.title}
+              </td>
+
+              {/* Difficulty */}
+              <td className="p-5 border border-gray-600 text-center">
                 {contest.difficulty}
               </td>
-              <td className="p-3 border border-gray-600">{contest.status}</td>
+
+              {/* Status */}
+              <td className="p-3 border border-gray-600 text-center">
+                {contest.status}
+              </td>
             </tr>
           ))}
         </tbody>
