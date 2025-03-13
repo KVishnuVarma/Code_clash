@@ -3,10 +3,12 @@ import DatePicker from "react-datepicker";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import "react-datepicker/dist/react-datepicker.css";
 
-const ManageContests = () => {
+function App() {
   const [contests, setContests] = useState([]);
   const [filter, setFilter] = useState("all");
-  const [expanded, setExpanded] = useState({}); // State to track expanded questions
+  const [expanded, setExpanded] = useState({});
+  const [selectedContest, setSelectedContest] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -31,7 +33,25 @@ const ManageContests = () => {
       const data = await response.json();
       if (!Array.isArray(data)) throw new Error("Invalid response format");
 
-      setContests(data);
+      // Update status if endTime has passed
+      const now = new Date();
+      const updatedContests = data.map((contest) => {
+        const endTime = new Date(contest.endTime);
+        const startTime = new Date(contest.startTime);
+        
+        // Determine status based on time
+        if (endTime < now) {
+          contest.status = "Completed";
+        } else if (startTime <= now && endTime >= now) {
+          contest.status = "Ongoing";
+        } else {
+          contest.status = "Upcoming";
+        }
+        
+        return contest;
+      });
+
+      setContests(updatedContests);
     } catch (error) {
       console.error("Error fetching contests:", error.message);
     }
@@ -39,6 +59,9 @@ const ManageContests = () => {
 
   useEffect(() => {
     fetchContests();
+    // Set up an interval to check contest status every minute
+    const interval = setInterval(fetchContests, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleChange = (e) => {
@@ -65,7 +88,7 @@ const ManageContests = () => {
   const toggleOptions = (index) => {
     setExpanded((prev) => ({
       ...prev,
-      [index]: !prev[index], // Toggle expanded state for the question
+      [index]: !prev[index],
     }));
   };
 
@@ -134,6 +157,19 @@ const ManageContests = () => {
     });
   };
 
+  const openModal = async (contest) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/contest/${contest._id}/participants`
+      );
+      const participantData = await response.json();
+      setSelectedContest({ ...contest, ...participantData });
+      setShowModal(true);
+    } catch (error) {
+      console.error("Error fetching participant data:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-6 text-white">
       <h2 className="text-4xl font-bold mb-6 text-center text-blue-400">
@@ -163,7 +199,6 @@ const ManageContests = () => {
         />
 
         <div className="flex items-center gap-9 mb-3">
-          {/* Start Time */}
           <div className="w-1/2 flex flex-col">
             <label className="text-gray-300 mb-2">Start Time</label>
             <DatePicker
@@ -175,7 +210,6 @@ const ManageContests = () => {
             />
           </div>
 
-          {/* End Time */}
           <div className="w-1/2 flex flex-col">
             <label className="text-gray-300 mb-2">End Time</label>
             <DatePicker
@@ -194,6 +228,7 @@ const ManageContests = () => {
           onChange={handleChange}
           className="w-full p-3 mb-3 border rounded bg-gray-700 text-white"
         >
+          <option value="">Select Difficulty</option>
           <option value="Easy">Easy</option>
           <option value="Medium">Medium</option>
           <option value="Hard">Hard</option>
@@ -214,7 +249,6 @@ const ManageContests = () => {
         >
           <option value="Upcoming">Upcoming</option>
           <option value="Ongoing">Ongoing</option>
-          <option value="Completed">Completed</option>
         </select>
         <input
           type="text"
@@ -245,7 +279,6 @@ const ManageContests = () => {
 
         {form.problems.map((q, qIndex) => (
           <div key={qIndex} className="mb-3 bg-gray-700 p-3 rounded-lg">
-            {/* Question Input with Arrow Button */}
             <div className="flex justify-between items-center">
               <input
                 type="text"
@@ -256,11 +289,10 @@ const ManageContests = () => {
                 }
                 className="w-full p-2 border rounded bg-gray-800 text-white"
               />
-              {/* Toggle Button */}
               <button
-                type="button" // <-- Prevents accidental form submission
+                type="button"
                 onClick={(e) => {
-                  e.stopPropagation(); // <-- Stops event bubbling
+                  e.stopPropagation();
                   toggleOptions(qIndex);
                 }}
                 className="ml-2 text-white p-2 rounded-full bg-gray-600 hover:bg-gray-500 transition"
@@ -269,7 +301,6 @@ const ManageContests = () => {
               </button>
             </div>
 
-            {/* Options Section (Hidden when collapsed) */}
             {expanded[qIndex] && (
               <div className="mt-2">
                 {q.options.map((option, optIndex) => (
@@ -287,9 +318,7 @@ const ManageContests = () => {
                       type="radio"
                       name={`correctOption-${qIndex}`}
                       checked={q.correctOption === optIndex}
-                      onChange={() =>
-                        handleCorrectOptionChange(qIndex, optIndex)
-                      }
+                      onChange={() => handleCorrectOptionChange(qIndex, optIndex)}
                       className="w-5 h-5"
                     />
                   </div>
@@ -307,42 +336,98 @@ const ManageContests = () => {
         </button>
       </form>
 
+      <div className="flex justify-center space-x-5 mb-9 mt-7">
+        {["all", "upcoming", "ongoing", "completed"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-2 rounded-lg ${
+              filter === status ? "bg-blue-500" : "bg-gray-700"
+            }`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </button>
+        ))}
+      </div>
+
       <table className="w-full mt-6 border-collapse border border-gray-700 text-white">
         <thead>
           <tr className="bg-gray-800">
             <th className="p-3 border border-gray-600">Title</th>
             <th className="p-3 border border-gray-600">Difficulty</th>
             <th className="p-3 border border-gray-600">Status</th>
+            <th className="p-3 border border-gray-600">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {getFilteredContests().map((contest, index) => (
-            <tr key={index} className="bg-gray-700 hover:bg-gray-600">
-              {/* Title - Truncated with Tooltip */}
+          {getFilteredContests().map((contest) => (
+            <tr key={contest._id} className="bg-gray-700 hover:bg-gray-600">
               <td
                 className="p-5 border border-gray-600 max-w-[200px] truncate"
-                title={contest.title} // Tooltip to show full title on hover
+                title={contest.title}
               >
                 {contest.title.length > 30
                   ? `${contest.title.substring(0, 30)}...`
                   : contest.title}
               </td>
-
-              {/* Difficulty */}
               <td className="p-5 border border-gray-600 text-center">
                 {contest.difficulty}
               </td>
-
-              {/* Status */}
               <td className="p-3 border border-gray-600 text-center">
                 {contest.status}
+              </td>
+              <td className="p-3 border border-gray-600 text-center">
+                {contest.status === "Completed" && (
+                  <button
+                    onClick={() => openModal(contest)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    View Results
+                  </button>
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {showModal && selectedContest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg text-white max-w-md w-full">
+            <h3 className="text-2xl font-bold mb-4 text-blue-400">
+              {selectedContest.title} - Results
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <p className="text-lg mb-2">Total Participants</p>
+                <p className="text-3xl font-bold text-blue-400">
+                  {selectedContest.totalParticipants || 0}
+                </p>
+              </div>
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <p className="text-lg mb-2">Cleared Participants</p>
+                <p className="text-3xl font-bold text-green-400">
+                  {selectedContest.clearedParticipants || 0}
+                </p>
+              </div>
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <p className="text-lg mb-2">Failed Participants</p>
+                <p className="text-3xl font-bold text-red-400">
+                  {selectedContest.failedParticipants || 0}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowModal(false)}
+              className="mt-6 w-full px-4 py-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}
 
-export default ManageContests;
+export default App;

@@ -5,23 +5,34 @@ const Contest = require("../models/contest");
 // Create a new contest
 router.post("/", async (req, res) => {
     try {
-        const { title, startTime, endTime, problems, difficulty , rules , allowedLanguages , maxAttempts , description , status } = req.body;
-        console.log(req.body)
+        const { title, startTime, endTime, problems, difficulty, rules, allowedLanguages, maxAttempts, description, status } = req.body;
+        console.log(req.body);
 
         if (!title || !startTime || !endTime) {
             return res.status(400).json({ error: "Title, startTime, and endTime are required" });
         }
 
-        const contest = new Contest({ title, startTime, endTime, problems: problems || [] ,difficulty , rules , allowedLanguages , maxAttempts , description , status});
+        const contest = new Contest({ 
+            title, 
+            startTime, 
+            endTime, 
+            problems: problems || [], 
+            difficulty, 
+            rules, 
+            allowedLanguages, 
+            maxAttempts, 
+            description, 
+            status 
+        });
+
         await contest.save();
         res.status(201).json({ message: "Contest created successfully", contest });
 
     } catch (error) {
-        console.error("Error creating contest:", error); // ✅ Log error details
+        console.error("Error creating contest:", error);
         res.status(500).json({ 
             error: "Failed to create contest", 
-            details: error.message, 
-            stack: error.stack  // ✅ Include full error stack trace
+            details: error.message 
         });
     }
 });
@@ -46,10 +57,19 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-// Get all contests
+// Get all contests (Auto-update contest status)
 router.get("/", async (req, res) => {
     try {
+        const now = new Date();
         const contests = await Contest.find().populate("problems");
+
+        for (const contest of contests) {
+            if (contest.status !== "Completed" && new Date(contest.endTime) < now) {
+                contest.status = "Completed";
+                await contest.save();
+            }
+        }
+
         res.json(contests);
     } catch (error) {
         console.error("Error fetching contests:", error);
@@ -70,6 +90,29 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error("Error fetching contest:", error);
         res.status(500).json({ error: "Failed to fetch contest", details: error.message });
+    }
+});
+
+// Fetch contest participants
+router.get("/:id/participants", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const contest = await Contest.findById(id);
+
+        if (!contest) {
+            return res.status(404).json({ error: "Contest not found" });
+        }
+
+        const participantStats = {
+            totalParticipants: contest.totalParticipants || 0,
+            clearedParticipants: contest.clearedParticipants || 0,
+            failedParticipants: contest.failedParticipants || 0,
+        };
+
+        res.json(participantStats);
+    } catch (error) {
+        console.error("Error fetching participants:", error);
+        res.status(500).json({ error: "Server error" });
     }
 });
 
