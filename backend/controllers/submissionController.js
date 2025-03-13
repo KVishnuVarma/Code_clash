@@ -1,39 +1,52 @@
-const Submission = require('../models/Submission');
+const Submission = require("../models/Submission");
+const Problem = require("../models/Problem");
+const { executeCode } = require("../utils/codeExecution");
 
-exports.getAllSubmissions = async (req, res) => {
-    try {
-        const submissions = await Submission.find();
-        res.status(200).json(submissions);
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to fetch submissions' });
-    }
-};
+const submitCode = async (req, res) => {
+    const { userId, problemId, language, code } = req.body;
 
-exports.getSubmissionsByUserId = async (req, res) => {
     try {
-        const submissions = await Submission.find({ userId: req.params.userId });
-        res.status(200).json(submissions);
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to fetch user submissions' });
-    }
-};
+        const problem = await Problem.findById(problemId);
+        if (!problem) {
+            return res.status(404).json({ error: "Problem not found" });
+        }
 
-exports.getSubmissionById = async (req, res) => {
-    try {
-        const submission = await Submission.findById(req.params.id);
-        if (!submission) return res.status(404).json({ error: 'Submission not found' });
-        res.status(200).json(submission);
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to fetch submission' });
-    }
-};
+        let isCorrect = true;
 
-exports.createSubmission = async (req, res) => {
-    try {
-        const submission = new Submission(req.body);
+        for (let testCase of problem.testCases) {
+            console.log(`Running test case with input:`, testCase.input);
+            const result = await executeCode(language, code, testCase.input);
+            console.log(`Execution result:`, result);
+
+            if (!result || result.stdout === null) {
+                console.log("Error: executeCode returned null");
+                return res.status(500).json({ error: "Code execution failed" });
+            }
+
+            if (result.stdout.trim() !== testCase.output.trim()) {
+                isCorrect = false;
+                break;
+            }
+        }
+
+        const submission = new Submission({
+            userId,
+            problemId,
+            language,
+            code,
+            status: isCorrect ? "Accepted" : "Wrong Answer"
+        });
+
         await submission.save();
-        res.status(201).json({ message: '✅ Submission created successfully', submission });
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to create submission' });
+        if (isCorrect) {
+            await Problem.updateOne({ _id: problemId }, { $inc: { totalParticipants: 1 } });
+        }
+
+        res.json({ message: "Submission successful", status: submission.status });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
     }
 };
+
+module.exports = { submitCode };

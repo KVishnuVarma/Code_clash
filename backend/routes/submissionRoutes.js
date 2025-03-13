@@ -1,13 +1,7 @@
-const express = require('express');
+const express = require("express");
+const { submitCode } = require("../controllers/submissionController");
+
 const router = express.Router();
-const submissionController = require('../controllers/submissionController');
-
-router.get('/', submissionController.getAllSubmissions);
-
-router.get('/user/:userId', submissionController.getSubmissionsByUserId);
-
-router.get('/:id', submissionController.getSubmissionById);
-
-router.post('/', submissionController.createSubmission);
+router.post("/", submitCode);
 
 module.exports = router;
