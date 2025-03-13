@@ -167,4 +167,17 @@ router.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
     }
 });
 
+router.get("/api/leaderboard", async (req, res) => {
+    try {
+        const leaderboard = await User.find({ role: "user" }).sort({ points: -1 }); // ✅ Exclude admins
+        res.json(leaderboard);
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+
+  
+
 module.exports = router;
