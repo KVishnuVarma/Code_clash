@@ -1,18 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Users, Trophy, List, BarChart, LogOut } from "lucide-react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
+import { Chart as ChartJS, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 // Register ChartJS components
@@ -24,6 +13,7 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
+  Filler,
   Legend,
   ArcElement
 );
@@ -253,71 +243,6 @@ const AdminDashboard = () => {
           />
         </div>
       </div>
-
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        <DashboardCard
-          title="Manage Users"
-          description="View, edit, and manage user accounts."
-          to="/admin-dashboard/users"
-          icon={<Users size={32} />}
-        />
-        <DashboardCard
-          title="Manage Contests"
-          description="Create and update coding contests."
-          to="/admin-dashboard/contests"
-          icon={<Trophy size={32} />}
-        />
-        <DashboardCard
-          title="Manage Problems"
-          description="Add, edit, and organize coding problems."
-          to="/admin-dashboard/problems"
-          icon={<List size={32} />}
-        />
-        <DashboardCard
-          title="Leaderboard"
-          description="Track top performers in contests."
-          to="/admin-dashboard/leaderboard"
-          icon={<BarChart size={32} />}
-        />
-        <DashboardCard
-          title="Logout"
-          description="Exit admin panel securely."
-          to="/login"
-          icon={<LogOut size={32} />}
-          customClass="bg-gray-500 text-white"
-        />
-      </div>
-    </div>
-  );
-};
-
-const DashboardCard = ({ title, description, to, icon, customClass = "" }) => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-
-  const handleClick = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      navigate(to);
-    }, 2000);
-  };
-
-  return (
-    <div
-      className={`flex flex-col items-center justify-center p-6 rounded-xl shadow-xl bg-gray-800 bg-opacity-40 backdrop-blur-md transition-all transform hover:scale-105 hover:bg-opacity-60 border-2 border-gray-500 hover:border-white hover:shadow-2xl cursor-pointer ${customClass}`}
-      onClick={handleClick}
-    >
-      {loading ? (
-        <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-      ) : (
-        <>
-          <div className="mb-4 text-gray-300">{icon}</div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <p className="text-gray-400 text-sm text-center">{description}</p>
-        </>
-      )}
     </div>
   );
 };
