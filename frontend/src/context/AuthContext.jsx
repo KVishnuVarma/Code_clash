@@ -4,34 +4,46 @@ import { useNavigate } from "react-router-dom";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem("token"));
-    const [role, setRole] = useState(localStorage.getItem("role"));
     const navigate = useNavigate();
 
+    // Initialize state from sessionStorage for security (session clears on browser close)
+    const [user, setUser] = useState(() => JSON.parse(sessionStorage.getItem("user")) || null);
+    const [token, setToken] = useState(() => sessionStorage.getItem("token") || null);
+    const [role, setRole] = useState(() => sessionStorage.getItem("role") || null);
+    const [loading, setLoading] = useState(true);
+
+    // Auto-fetch user if token exists
     useEffect(() => {
-        if (token) fetchUser();
+        if (token) {
+            fetchUser();
+        } else {
+            setLoading(false);
+        }
     }, [token]);
 
+    // Fetch user details from backend
     const fetchUser = async () => {
         try {
             const res = await fetch("http://localhost:5000/api/auth/user", {
                 headers: { "x-auth-token": token },
             });
+
+            if (!res.ok) throw new Error("Failed to fetch user");
+
             const data = await res.json();
-            if (res.ok) {
-                setUser(data);
-                setRole(data.role);
-                localStorage.setItem("role", data.role);
-            } else {
-                logout();
-            }
+            setUser(data);
+            setRole(data.role);
+            sessionStorage.setItem("user", JSON.stringify(data));
+            sessionStorage.setItem("role", data.role);
         } catch (err) {
             console.error("Error fetching user:", err);
             logout();
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Login function
     const login = async (email, password) => {
         try {
             const res = await fetch("http://localhost:5000/api/auth/login", {
@@ -46,17 +58,17 @@ export const AuthProvider = ({ children }) => {
                 return false;
             }
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("role", data.user.role);
+            // Store in sessionStorage instead of localStorage for security
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", data.user.role);
+            sessionStorage.setItem("user", JSON.stringify(data.user));
+
             setToken(data.token);
             setUser(data.user);
             setRole(data.user.role);
 
-            if (data.user.role === "admin") {
-                navigate("/admin-dashboard");
-            } else {
-                navigate("/");
-            }
+            // Redirect based on role
+            navigate(data.user.role === "admin" ? "/admin-dashboard" : "/userDashboard");
 
             return true;
         } catch (err) {
@@ -65,9 +77,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Logout function
     const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
+        sessionStorage.clear(); // Clear session storage
         setUser(null);
         setToken(null);
         setRole(null);
@@ -75,12 +87,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, role, login, logout }}>
-            {children}
+        <AuthContext.Provider value={{ user, token, role, login, logout, loading }}>
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+// Custom hook for accessing AuthContext
+export const useAuth = () => useContext(AuthContext);

@@ -7,7 +7,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  
+  const { login } = useAuth(); // Ensure AuthContext is correctly implemented
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,18 +18,16 @@ const Login = () => {
 
     try {
       const user = await login(email, password);
-      if (user && user.isAdmin !== undefined) {
-        console.log("User Data:", user);
-        setTimeout(() => {
-          navigate(user.isAdmin ? "/admin" : "/user-dashboard");
-        }, 2000);
+
+      if (user && typeof user.isAdmin !== "undefined") {
+        console.log("✅ User Data:", user);
+        navigate(user.isAdmin ? "/admin-dashboard" : "/userDashboard"); 
       } else {
-        setError("Invalid email or password.");
-        setLoading(false);
+        throw new Error("Invalid credentials");
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Something went wrong. Please try again.");
+      console.error("❌ Login error:", err.message);
+      setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
@@ -37,8 +36,11 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
-        {error && <p className="text-red-500 text-center">{error}</p>}
+        
+        {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+
         <form onSubmit={handleSubmit} className="mt-4">
+          {/* Email Input */}
           <div className="mb-4">
             <label className="block text-gray-700 font-medium">Email</label>
             <input
@@ -49,6 +51,8 @@ const Login = () => {
               required
             />
           </div>
+
+          {/* Password Input */}
           <div className="mb-4">
             <label className="block text-gray-700 font-medium">Password</label>
             <input
@@ -59,6 +63,8 @@ const Login = () => {
               required
             />
           </div>
+
+          {/* Login Button */}
           <button
             type="submit"
             className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg transition duration-200 flex items-center justify-center"
@@ -72,7 +78,7 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Register Button */}
+        {/* Register Link */}
         <p className="text-center text-gray-600 mt-4">
           Don't have an account?{" "}
           <button
