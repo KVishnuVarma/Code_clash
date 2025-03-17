@@ -7,7 +7,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth(); // Ensure AuthContext is correctly implemented
   const navigate = useNavigate();
 
@@ -19,15 +19,16 @@ const Login = () => {
     try {
       const user = await login(email, password);
 
-      if (user && typeof user.isAdmin !== "undefined") {
+      if (user && user?.isAdmin !== undefined) {
         console.log("✅ User Data:", user);
-        navigate(user.isAdmin ? "/admin-dashboard" : "/userDashboard"); 
+        navigate(user.isAdmin ? "/admin-dashboard" : "//userDashboard/user-dashboard"); // Fixed user route
       } else {
-        throw new Error("Invalid credentials");
+        throw new Error("Invalid credentials. Please check your email and password.");
       }
     } catch (err) {
-      console.error("❌ Login error:", err.message);
+      console.error("❌ Login error:", err);
       setError(err.message || "Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
@@ -36,7 +37,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
-        
+
         {error && <p className="text-red-500 text-center mt-2">{error}</p>}
 
         <form onSubmit={handleSubmit} className="mt-4">

@@ -34,3 +34,14 @@ exports.getAllProblems = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+exports.getParticularProblems = async(req , res)=> {
+    const id = req.params.id
+    try {
+        const problems = await Problem.find({_id:id});
+        res.status(200).json(problems);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

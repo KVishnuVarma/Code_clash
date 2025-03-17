@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 import ProtectedRoute from "./Components/ProtectedRoute";
@@ -17,34 +17,99 @@ import Contest from "./Pages/Contests";
 import Leader from "./Pages/LeaderBoard";
 import Problem from "./Pages/Problems";
 import UserDashboard from "./Pages/UserDashboard";
-import useAuth from "./hooks/useAuth"; 
+import useAuth from "./hooks/useAuth";
+
+// Importing the new Problem pages
+import ProblemView from "./Components/ProblemView";
+import ProblemSolver from "./Components/ProblemSolver";
 
 export default function App() {
-  const { user } = useAuth(); // Get user info
-  
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // Hide Navbar & Footer when on the Problem Solver (full-screen) page (/problems/:id/solve)
+  const isProblemSolver = /^\/problems\/.+\/solve$/.test(location.pathname);
+
   return (
     <>
-      {user?.role === "admin" && <Navbar />} {/* Show Navbar only for admin */}
+      {(!isProblemSolver && user?.role === "admin") && <Navbar />}
+      
       <Routes>
         {/* Public Routes */}
-        <Route path="/userDashboard" element={<UserDashboard />} />
-        <Route path="/contest" element={<Contest />} />
-        <Route path="/leader" element={<Leader />} />
-        <Route path="/problem" element={<Problem />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/userDashboard/user-dashboard" element={<UserDashboard />} />
+        <Route path="/userDashboard/user-profile" element={<Profile />} />
+        <Route path="/userDashboard/user-contests" element={<Contest />} />
+        <Route path="/userDashboard/user-leaderboard" element={<Leader />} />
+        <Route path="/userDashboard/user-problems" element={<Problem />} />
+        <Route path="/problems/:id/view" element={<ProblemView />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes (Only Logged-in Users) */}
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        {/* Protected Routes */}
+        <Route 
+          path="/user-profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
 
-        {/* Admin Routes (Only Admins) */}
-        <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path="/admin-dashboard/users" element={<AdminRoute><Users /></AdminRoute>} />
-        <Route path="/admin-dashboard/contests" element={<AdminRoute><Contests /></AdminRoute>} />
-        <Route path="/admin-dashboard/problems" element={<AdminRoute><Problems /></AdminRoute>} />
-        <Route path="/admin-dashboard/leaderboard" element={<AdminRoute><Leaderboard /></AdminRoute>} />
+        {/* Protected Problem Solver Route */}
+        <Route 
+          path="/problems/:id/solve" 
+          element={
+            <ProtectedRoute>
+              <ProblemSolver />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Admin Routes */}
+        <Route 
+          path="/admin-dashboard" 
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin-dashboard/users" 
+          element={
+            <AdminRoute>
+              <Users />
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin-dashboard/contests" 
+          element={
+            <AdminRoute>
+              <Contests />
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin-dashboard/problems" 
+          element={
+            <AdminRoute>
+              <Problems />
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin-dashboard/leaderboard" 
+          element={
+            <AdminRoute>
+              <Leaderboard />
+            </AdminRoute>
+          } 
+        />
       </Routes>
-      <Footer />
+      
+      {!isProblemSolver && <Footer />}
     </>
   );
 }

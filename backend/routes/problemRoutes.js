@@ -2,13 +2,15 @@ const express = require("express");
 const mongoose = require("mongoose");  // ✅ Fix: Import mongoose
 const router = express.Router();
 const Problem = require("../models/Problem"); // ✅ Fix: Import Problem model
-const { createProblem, getAllProblems } = require("../controllers/problemController"); // ✅ Ensure correct import
+const { createProblem, getAllProblems, getParticularProblems } = require("../controllers/problemController"); // ✅ Ensure correct import
 
 // 🛠 POST route to create a new problem
 router.post("/add", createProblem);
 
 // 🛠 GET route to fetch all problems
 router.get("/", getAllProblems);
+
+router.get("/:id", getParticularProblems);
 
 // 🛠 DELETE route to remove a problem by ID
 router.delete("/:id", async (req, res) => {
