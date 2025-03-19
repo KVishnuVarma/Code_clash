@@ -21,8 +21,8 @@ import useAuth from "./hooks/useAuth";
 
 // Importing the new Problem pages
 import ProblemView from "./Components/ProblemView";
-import ProblemSolver from "./Components/ProblemSolver";
-
+import ProblemSolver from "./components/ProblemSolver";
+import ResultsPage from "./Components/ResultsPage";
 export default function App() {
   const { user } = useAuth();
   const location = useLocation();
@@ -57,14 +57,8 @@ export default function App() {
         />
 
         {/* Protected Problem Solver Route */}
-        <Route 
-          path="/problems/:id/solve" 
-          element={
-            <ProtectedRoute>
-              <ProblemSolver />
-            </ProtectedRoute>
-          } 
-        />
+        <Route path="/problems/:id/solve" element={<ProblemSolver />} />
+        <Route path="/results" element={<ResultsPage />} />
 
         {/* Admin Routes */}
         <Route 

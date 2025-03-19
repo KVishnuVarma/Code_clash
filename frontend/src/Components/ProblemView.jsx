@@ -27,11 +27,10 @@ const ProblemDetails = () => {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                // Since the API returns an array with one item, we take the first item
                 setProblem(Array.isArray(data) && data.length > 0 ? data[0] : null);
             } catch (err) {
                 console.error("Error fetching problem:", err);
-                setError(err.message || "Failed to fetch problem details");
+                setError(err instanceof Error ? err.message : "Failed to fetch problem details");
             } finally {
                 setLoading(false);
             }
@@ -41,7 +40,14 @@ const ProblemDetails = () => {
     }, [id]);
 
     const handleStartSolving = () => {
-        navigate(`/problems/${id}/solve`);
+        if (id) {
+            navigate(`/problems/${id}/solve`);
+        }
+    };
+
+    const calculateSuccessRate = (problem) => {
+        if (!problem.totalParticipants) return 0;
+        return Math.round((problem.successfulSubmissions / problem.totalParticipants) * 100);
     };
 
     if (loading) {
@@ -58,7 +64,7 @@ const ProblemDetails = () => {
                 <div className="bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
                     <p className="font-medium">Error: {error}</p>
                     <button 
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/problems')}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                         Back to Problems
@@ -74,7 +80,7 @@ const ProblemDetails = () => {
                 <div className="text-center py-12">
                     <p className="text-xl text-gray-600 mb-4">Problem not found</p>
                     <button 
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/problems')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         Back to Problems
@@ -83,6 +89,8 @@ const ProblemDetails = () => {
             </div>
         );
     }
+
+    const successRate = calculateSuccessRate(problem);
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -149,7 +157,7 @@ const ProblemDetails = () => {
                         <h2 className="text-lg font-semibold text-gray-700">Participants</h2>
                     </div>
                     <p className="text-gray-600">
-                        {(problem.totalParticipants || 0).toLocaleString()}
+                        {problem.totalParticipants.toLocaleString()}
                     </p>
                 </motion.div>
 
@@ -163,7 +171,7 @@ const ProblemDetails = () => {
                         <CheckCircle className="text-indigo-500" />
                         <h2 className="text-lg font-semibold text-gray-700">Success Rate</h2>
                     </div>
-                    <p className="text-gray-600">75%</p>
+                    <p className="text-gray-600">{successRate}%</p>
                 </motion.div>
             </div>
 
