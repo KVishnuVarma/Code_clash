@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ConfettiGenerator from 'confetti-js';
-import { Trophy, Clock, Target, AlertTriangle } from 'lucide-react';
+import { Trophy, Clock, AlertTriangle } from 'lucide-react';
 
 const calculateScore = (timeSpent, testCasesPassed, totalTestCases, violations) => {
   let score = (testCasesPassed / totalTestCases) * 100; // Base score from test cases
@@ -19,7 +19,7 @@ const calculateScore = (timeSpent, testCasesPassed, totalTestCases, violations) 
   return Math.max(0, Math.round(score)); // Ensure score doesn't go below 0
 };
 
-const ResultsPage = ({ testCases, timeSpent, violations }) => {
+const ResultsPage = ({ testCases = [], timeSpent = 0, violations = { copyPaste: 0, tabChanges: 0, mobileDetected: false } }) => {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
   const passedTests = testCases.filter(tc => tc.passed).length;

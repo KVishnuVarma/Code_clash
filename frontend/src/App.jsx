@@ -58,7 +58,7 @@ export default function App() {
 
         {/* Protected Problem Solver Route */}
         <Route path="/problems/:id/solve" element={<ProblemSolver />} />
-        <Route path="/results" element={<ResultsPage />} />
+        <Route path="/problems/:id/results" element={<ResultsPage />} />
 
         {/* Admin Routes */}
         <Route 

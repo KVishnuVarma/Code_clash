@@ -235,7 +235,7 @@ const ProblemSolve = () => {
         }))
       };
       
-      navigate('/results', {
+      navigate(`/problems/${id}/results`, {
         state: {
           testCases: results.testCases,
           timeSpent: Date.now() - startTime,
