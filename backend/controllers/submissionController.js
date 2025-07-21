@@ -17,7 +17,18 @@ const submitCode = async (req, res) => {
 
     // Execute each test case and collect detailed results
     for (let testCase of problem.testCases) {
-      const result = await executeCode(language, code, testCase.input);
+      let inputToUse = testCase.input;
+      if (language.toLowerCase() === 'python' && /^s\s*=\s*/.test(inputToUse)) {
+        inputToUse = inputToUse.replace(/^s\s*=\s*/, '').trim();
+      }
+      // Add debug logging
+      console.log('--- Test Case Debug ---');
+      console.log('Raw Input:', testCase.input);
+      console.log('Processed Input:', inputToUse);
+      console.log('Expected Output:', testCase.output);
+      const result = await executeCode(language, code, inputToUse);
+      console.log('User Output:', result.stdout);
+      console.log('----------------------');
 
       if (!result || result.stdout === null) {
         return res.status(500).json({ error: "Code execution failed" });

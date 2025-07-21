@@ -108,7 +108,7 @@ const ProblemDetails = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        Start Solving <ArrowRight size={20} />
+                        Start
                     </motion.button>
                 </div>
                 <p className="text-gray-600 text-lg">{problem.description}</p>

@@ -36,12 +36,15 @@ exports.getAllProblems = async (req, res) => {
 };
 
 
-exports.getParticularProblems = async(req , res)=> {
-    const id = req.params.id
+exports.getParticularProblems = async (req, res) => {
+    const id = req.params.id;
     try {
-        const problems = await Problem.find({_id:id});
-        res.status(200).json(problems);
+        const problem = await Problem.findById(id); // Use findById for a single object
+        if (!problem) {
+            return res.status(404).json({ error: "Problem not found" });
+        }
+        res.status(200).json(problem); // Return the object, not an array
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};

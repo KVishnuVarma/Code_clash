@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import Webcam from 'react-webcam';
-import Editor from '@monaco-editor/react';
-import { format } from 'date-fns';
-import { 
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import Webcam from "react-webcam";
+import Editor from "@monaco-editor/react";
+import { format } from "date-fns";
+import {
   ArrowLeft,
   Play,
   AlertCircle,
@@ -16,79 +16,160 @@ import {
   TrendingUp,
   CheckCircle,
   Languages,
-  Timer
-} from 'lucide-react';
-
-// Mock problem data with extended properties
-const mockProblem = {
-  id: '1',
-  title: 'Two Sum',
-  difficulty: 'Easy',
-  description: 'Given an array of integers nums and an integer target, return indices of the two numbers in the array that add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.',
-  participants: 1234,
-  successRate: 76.5,
-  testCases: [
-    {
-      input: '[2,7,11,15], target = 9',
-      output: '[0,1]',
-      explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].'
-    },
-    {
-      input: '[3,2,4], target = 6',
-      output: '[1,2]',
-      explanation: 'Because nums[1] + nums[2] == 6, we return [1, 2].'
-    }
-  ],
-  languages: [
-    { id: 'python', name: 'Python', template: 'def two_sum(nums, target):\n    # Write your solution here\n    pass' },
-    { id: 'javascript', name: 'JavaScript', template: 'function twoSum(nums, target) {\n    // Write your solution here\n}' },
-    { id: 'java', name: 'Java', template: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n    }\n}' },
-    { id: 'cpp', name: 'C++', template: 'class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Write your solution here\n    }\n};' }
-  ]
-};
-
-// Mock API response for code submission
-const mockRunCode = async (code, testCase, language) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simple test to check if the code contains key elements based on language
-      const isValid = code.includes('two_sum') || code.includes('twoSum');
-      
-      resolve({
-        success: isValid,
-        output: isValid ? '[0, 1]' : null,
-        error: isValid ? null : 'Your solution is incorrect. Please try again.'
-      });
-    }, 1000);
-  });
-};
+  Timer,
+} from "lucide-react";
+import { submitSolution } from "../services/problemService";
+import { useAuth } from "../context/AuthContext";
 
 const ProblemSolve = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [problem, setProblem] = useState(mockProblem);
+  const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState(mockProblem.languages[0]);
-  const [code, setCode] = useState(mockProblem.languages[0].template);
   const [showWarning, setShowWarning] = useState(false);
   const [isCameraMinimized, setIsCameraMinimized] = useState(false);
   const [violations, setViolations] = useState({
     tabChanges: 0,
     copyPaste: 0,
-    mobileDetected: false
+    mobileDetected: false,
   });
   const [isExamTerminated, setIsExamTerminated] = useState(false);
   const [testResults, setTestResults] = useState(null);
   const [canSubmit, setCanSubmit] = useState(false);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [code, setCode] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+  const { user } = useAuth();
 
   const webcamRef = useRef(null);
   const socketRef = useRef(null);
   const tabChangeTimeout = useRef(null);
   const mobileCheckInterval = useRef(null);
   const timerInterval = useRef(null);
+  const [showNavConfirm, setShowNavConfirm] = useState(false);
+  const [pendingNav, setPendingNav] = useState(null);
+
+  // Remove mockRunCode and related logic
+
+  useEffect(() => {
+    const fetchProblem = async () => {
+      try {
+        // Mock problem data since API might not be available
+        const mockProblem = {
+          id: id,
+          title: "Two Sum",
+          description:
+            "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+          difficulty: "Easy",
+          participants: 1250,
+          successRate: 67.5,
+          testCases: [
+            {
+              input: "nums = [2,7,11,15], target = 9",
+              output: "[0,1]",
+              explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
+            },
+            {
+              input: "nums = [3,2,4], target = 6",
+              output: "[1,2]",
+              explanation: "Because nums[1] + nums[2] == 6, we return [1, 2].",
+            },
+          ],
+          languages: [
+            {
+              id: "python",
+              name: "Python",
+              template:
+                "def two_sum(nums, target):\n    # Write your solution here\n    pass",
+            },
+            {
+              id: "javascript",
+              name: "JavaScript",
+              template:
+                "function twoSum(nums, target) {\n    // Write your solution here\n    \n}",
+            },
+            {
+              id: "java",
+              name: "Java",
+              template:
+                "public int[] twoSum(int[] nums, int target) {\n    // Write your solution here\n    \n}",
+            },
+            {
+              id: "cpp",
+              name: "C++",
+              template:
+                "#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Write your solution here\n        \n    }\n};",
+            },
+          ],
+        };
+
+        let data;
+        try {
+          const response = await fetch(
+            `http://localhost:5000/api/problems/${id}`
+          );
+          if (!response.ok) {
+            throw new Error("API not available");
+          }
+          data = await response.json();
+        } catch (apiError) {
+          console.log("API not available, using mock data");
+          data = mockProblem;
+        }
+        setProblem(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProblem();
+  }, [id]);
+
+  // Helper: map language string to object with id, name, and template
+  const languageDefaults = {
+    python: {
+      id: "python",
+      name: "Python",
+      template: "def solution():\n    # Write your code here\n    pass",
+    },
+    javascript: {
+      id: "javascript",
+      name: "JavaScript",
+      template: "function solution() {\n  // Write your code here\n}\n",
+    },
+    java: {
+      id: "java",
+      name: "Java",
+      template: "public class Solution {\n    public void solution() {\n        // Write your code here\n    }\n}\n",
+    },
+    cpp: {
+      id: "cpp",
+      name: "C++",
+      template: "#include <iostream>\nusing namespace std;\n\nvoid solution() {\n    // Write your code here\n}\n",
+    },
+  };
+
+  // Initialize language and code when problem loads
+  useEffect(() => {
+    if (problem?.languages && problem.languages.length > 0) {
+      let langs = problem.languages;
+      // If backend returns array of strings, convert to objects
+      if (typeof langs[0] === "string") {
+        langs = langs.map((langStr) => {
+          const key = langStr.toLowerCase();
+          return languageDefaults[key] || { id: key, name: langStr, template: "" };
+        });
+        setProblem((prev) => ({ ...prev, languages: langs }));
+      }
+      const defaultLanguage = langs[0];
+      setSelectedLanguage(defaultLanguage);
+      setCode(defaultLanguage.template || "");
+    }
+  }, [problem]);
 
   useEffect(() => {
     // Timer for elapsed time
@@ -99,11 +180,9 @@ const ProblemSolve = () => {
     // Simulate socket connection
     socketRef.current = {
       emit: (event, data) => {
-        console.log('Admin notification:', event, data);
-      }
+        console.log("Admin notification:", event, data);
+      },
     };
-    
-    setLoading(false);
 
     return () => {
       if (socketRef.current) {
@@ -115,57 +194,76 @@ const ProblemSolve = () => {
     };
   }, [startTime]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "Are you sure you want to leave? Your code will be lost.";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   const handleLanguageChange = (language) => {
     setSelectedLanguage(language);
-    setCode(language.template);
+    setCode(language.template || "");
     setTestResults(null);
     setCanSubmit(false);
   };
 
   const notifyAdmin = (violation) => {
     if (socketRef.current) {
-      socketRef.current.emit('violation', {
-        userId: 'user123',
+      socketRef.current.emit("violation", {
+        userId: user?._id,
         examId: id,
         violation,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   };
 
   const checkMobileDevice = () => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                    window.matchMedia("(max-width: 768px)").matches ||
-                    (window.screen.width <= 768);
-    
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) ||
+      window.matchMedia("(max-width: 768px)").matches ||
+      window.screen.width <= 768;
+
     if (isMobile && !violations.mobileDetected) {
-      setViolations(prev => ({ ...prev, mobileDetected: true }));
-      terminateExam('mobile_device_detected');
+      setViolations((prev) => ({ ...prev, mobileDetected: true }));
+      terminateExam("mobile_device_detected");
     }
   };
 
   const terminateExam = (reason) => {
     setIsExamTerminated(true);
     notifyAdmin({
-      type: 'exam_terminated',
+      type: "exam_terminated",
       reason,
-      violations: violations
+      violations: violations,
     });
-    
+
     // Stop webcam and screen recording
     if (webcamRef.current && webcamRef.current.stream) {
-      webcamRef.current.stream.getTracks().forEach(track => track.stop());
+      webcamRef.current.stream.getTracks().forEach((track) => track.stop());
     }
-    
+
     setTimeout(() => {
-      navigate('/');
+      navigate("/");
     }, 5000);
   };
 
@@ -177,27 +275,27 @@ const ProblemSolve = () => {
     // Tab change detection
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setViolations(prev => ({
+        setViolations((prev) => ({
           ...prev,
-          tabChanges: prev.tabChanges + 1
+          tabChanges: prev.tabChanges + 1,
         }));
         setShowWarning(true);
-        
+
         if (tabChangeTimeout.current) {
           clearTimeout(tabChangeTimeout.current);
         }
-        
+
         tabChangeTimeout.current = setTimeout(() => {
           setShowWarning(false);
         }, 3000);
 
         if (violations.tabChanges >= 2) {
-          terminateExam('excessive_tab_changes');
+          terminateExam("excessive_tab_changes");
         }
 
         notifyAdmin({
-          type: 'tab_change',
-          count: violations.tabChanges + 1
+          type: "tab_change",
+          count: violations.tabChanges + 1,
         });
       }
     };
@@ -205,32 +303,32 @@ const ProblemSolve = () => {
     // Copy/Paste prevention
     const preventCopyPaste = (e) => {
       e.preventDefault();
-      setViolations(prev => ({
+      setViolations((prev) => ({
         ...prev,
-        copyPaste: prev.copyPaste + 1
+        copyPaste: prev.copyPaste + 1,
       }));
       setShowWarning(true);
-      
+
       setTimeout(() => setShowWarning(false), 3000);
 
       if (violations.copyPaste >= 2) {
-        terminateExam('excessive_copy_paste');
+        terminateExam("excessive_copy_paste");
       }
 
       notifyAdmin({
-        type: 'copy_paste_attempt',
-        count: violations.copyPaste + 1
+        type: "copy_paste_attempt",
+        count: violations.copyPaste + 1,
       });
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('copy', preventCopyPaste);
-    document.addEventListener('paste', preventCopyPaste);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("copy", preventCopyPaste);
+    document.addEventListener("paste", preventCopyPaste);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('copy', preventCopyPaste);
-      document.removeEventListener('paste', preventCopyPaste);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("copy", preventCopyPaste);
+      document.removeEventListener("paste", preventCopyPaste);
       if (tabChangeTimeout.current) {
         clearTimeout(tabChangeTimeout.current);
       }
@@ -241,70 +339,67 @@ const ProblemSolve = () => {
   }, [id, violations]);
 
   const runCode = async () => {
+    setTestResults(null);
     try {
-      const result = await mockRunCode(code, problem.testCases[0], selectedLanguage.id);
-      
-      if (result.success) {
-        setCanSubmit(true);
-        setTestResults({
-          passed: true,
-          output: result.output,
-        });
-      } else {
-        setTestResults({
-          passed: false,
-          error: result.error,
-        });
-      }
+      // Call backend to check code against all test cases
+      const userId = user?._id; // Use real user ObjectId from context/auth
+      const result = await submitSolution({
+        userId,
+        problemId: id,
+        code,
+        language: selectedLanguage?.name || selectedLanguage?.id,
+        violations,
+      });
+      // result.results.testCases: [{input, output, passed}]
+      const allPassed = result.results.testCases.every(tc => tc.passed);
+      setCanSubmit(allPassed);
+      setTestResults({
+        passed: allPassed,
+        details: result.results.testCases,
+        metrics: result.results.metrics,
+        error: allPassed ? null : "Some test cases failed. Check details.",
+      });
     } catch (error) {
       setTestResults({
         passed: false,
-        error: 'Failed to run code. Please try again.',
+        error: error.message || "Failed to run code. Please try again.",
       });
     }
   };
 
   const handleSubmit = async () => {
+    if (!testResults?.passed) return;
     try {
       // Stop webcam and screen recording
       if (webcamRef.current && webcamRef.current.stream) {
-        webcamRef.current.stream.getTracks().forEach(track => track.stop());
+        webcamRef.current.stream.getTracks().forEach((track) => track.stop());
       }
-
-      // Update problem statistics
-      const updatedProblem = {
-        ...problem,
-        participants: problem.participants + 1,
-        successRate: ((problem.successRate * problem.participants + 100) / (problem.participants + 1)).toFixed(1)
-      };
-      setProblem(updatedProblem);
-
-      const results = {
-        testCases: problem.testCases.map(testCase => ({
-          ...testCase,
-          passed: true
-        })),
-        timeSpent: Date.now() - startTime,
-        violations: violations,
-        language: selectedLanguage.id,
-        code: code
-      };
-
-      // Store results in backend (simulated)
-      await fetch('/api/submissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: 'user123',
-          problemId: id,
-          results
-        })
+      // Pass all required fields to ResultsPage
+      navigate(`/problems/${id}/results`, {
+        state: {
+          testCases: testResults.details,
+          metrics: testResults.metrics,
+          violations,
+          startTime,
+        },
       });
-
-      // Navigate to results page
-      navigate(`/problems/${id}/results`, { state: results });
     } catch (error) {
-      setError('Failed to submit code. Please try again.');
+      setError("Failed to submit code. Please try again.");
+    }
+  };
+
+  // Mark as dirty if code changes
+  const handleCodeChange = (value) => {
+    setCode(value || "");
+    setIsDirty(true);
+  };
+
+  // Custom back button handler
+  const handleBack = () => {
+    if (isDirty) {
+      setShowNavConfirm(true);
+    } else {
+      navigate("/userDashboard/user-problems");
     }
   };
 
@@ -314,10 +409,12 @@ const ProblemSolve = () => {
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
           <div className="text-center">
             <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
-            <h2 className="text-2xl font-bold text-red-700 mb-4">Exam Terminated</h2>
+            <h2 className="text-2xl font-bold text-red-700 mb-4">
+              Exam Terminated
+            </h2>
             <p className="text-gray-600 mb-4">
-              Your exam has been terminated due to multiple violations of our exam policy.
-              This incident has been reported to the administrator.
+              Your exam has been terminated due to multiple violations of our
+              exam policy. This incident has been reported to the administrator.
             </p>
             <p className="text-sm text-gray-500">
               You will be redirected to the home page in a few seconds...
@@ -341,12 +438,24 @@ const ProblemSolve = () => {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
           <p className="font-medium">Error: {error}</p>
-          <button 
-            onClick={() => navigate('/userDashboard/user-problems')}
+          <button
+            onClick={() => navigate("/userDashboard/user-problems")}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Back to Problems
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Add null check for problem
+  if (!problem) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading problem...</p>
         </div>
       </div>
     );
@@ -360,7 +469,7 @@ const ProblemSolve = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-6">
               <button
-                onClick={() => navigate('/userDashboard/user-problems')}
+                onClick={handleBack}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 <ArrowLeft size={20} />
@@ -375,7 +484,13 @@ const ProblemSolve = () => {
               <div className="flex items-center gap-4 text-gray-600">
                 <div className="flex items-center gap-2">
                   <Users size={18} />
-                  <span>{problem.participants.toLocaleString()} Participants</span>
+                  <span>
+                    {problem.participants !== undefined &&
+                    problem.participants !== null
+                      ? problem.participants.toLocaleString()
+                      : 0}{" "}
+                    Participants
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <TrendingUp size={18} />
@@ -411,15 +526,21 @@ const ProblemSolve = () => {
         <div className="col-span-4">
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-6">
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">{problem.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                {problem.title}
+              </h1>
               <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
                 <Code size={16} />
                 <span>Problem #{id}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  problem.difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
-                  problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    problem.difficulty === "Easy"
+                      ? "bg-green-100 text-green-700"
+                      : problem.difficulty === "Medium"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
                   {problem.difficulty}
                 </span>
               </div>
@@ -431,18 +552,28 @@ const ProblemSolve = () => {
             {/* Test Cases */}
             <div className="border-t">
               <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Example Test Cases</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Example Test Cases
+                </h2>
                 <div className="space-y-4">
                   {problem.testCases.map((testCase, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">Input:</h3>
-                          <pre className="bg-white p-3 rounded text-sm">{testCase.input}</pre>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">
+                            Input:
+                          </h3>
+                          <pre className="bg-white p-3 rounded text-sm">
+                            {testCase.input}
+                          </pre>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">Output:</h3>
-                          <pre className="bg-white p-3 rounded text-sm">{testCase.output}</pre>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">
+                            Output:
+                          </h3>
+                          <pre className="bg-white p-3 rounded text-sm">
+                            {testCase.output}
+                          </pre>
                         </div>
                       </div>
                       {testCase.explanation && (
@@ -461,19 +592,36 @@ const ProblemSolve = () => {
         {/* Code Editor */}
         <div className="col-span-8">
           <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-8rem)]">
-            <div className="border-b px-4 py-2 flex items-center justify-between bg-gray-50">
+            <div className="border-b px-4 py-3 flex items-center justify-between bg-gray-50">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Languages size={18} className="text-gray-500" />
-                  <select
-                    value={selectedLanguage.id}
-                    onChange={(e) => handleLanguageChange(problem.languages.find(l => l.id === e.target.value))}
-                    className="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    {problem.languages.map(lang => (
-                      <option key={lang.id} value={lang.id}>{lang.name}</option>
-                    ))}
-                  </select>
+                  <span className="text-sm font-medium text-gray-700">Language:</span>
+                  {problem.languages && problem.languages.length > 0 && selectedLanguage ? (
+                    <select
+                      value={selectedLanguage.id}
+                      onChange={(e) => {
+                        const newLanguage = problem.languages.find(
+                          (lang) => lang.id === e.target.value
+                        );
+                        if (newLanguage) {
+                          handleLanguageChange(newLanguage);
+                        }
+                      }}
+                      className="min-w-[120px] text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-gray-400 transition-colors"
+                      style={{ appearance: 'menulist' }}
+                    >
+                      {problem.languages.map((lang) => (
+                        <option key={lang.id} value={lang.id}>
+                          {lang.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-red-600 text-sm">
+                      Loading languages...
+                    </span>
+                  )}
                 </div>
               </div>
               {testResults?.passed && (
@@ -483,42 +631,44 @@ const ProblemSolve = () => {
                 </div>
               )}
             </div>
-            <Editor
-              height="calc(100% - 41px)"
-              defaultLanguage={selectedLanguage.id}
-              language={selectedLanguage.id}
-              theme="vs-dark"
-              value={code}
-              onChange={setCode}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                readOnly: false,
-                wordWrap: 'on',
-                padding: { top: 20 },
-                suggestOnTriggerCharacters: false,
-                quickSuggestions: false,
-                parameterHints: { enabled: false },
-                suggestSelection: 'never',
-                acceptSuggestionOnCommitCharacter: false,
-                acceptSuggestionOnEnter: 'off',
-                tabCompletion: 'off',
-                wordBasedSuggestions: false
-              }}
-            />
+            {selectedLanguage && (
+              <Editor
+                height="calc(100% - 41px)"
+                defaultLanguage={selectedLanguage.id}
+                language={selectedLanguage.id}
+                theme="vs-dark"
+                value={code}
+                onChange={handleCodeChange}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  lineNumbers: "on",
+                  readOnly: false,
+                  wordWrap: "on",
+                  padding: { top: 20 },
+                  suggestOnTriggerCharacters: false,
+                  quickSuggestions: false,
+                  parameterHints: { enabled: false },
+                  suggestSelection: "never",
+                  acceptSuggestionOnCommitCharacter: false,
+                  acceptSuggestionOnEnter: "off",
+                  tabCompletion: "off",
+                  wordBasedSuggestions: false,
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
 
       {/* Webcam */}
-      <div className={`fixed ${isCameraMinimized ? 'bottom-4 right-4 w-48' : 'bottom-4 right-4 w-64'} transition-all duration-300`}>
+      <div
+        className={`fixed ${
+          isCameraMinimized ? "bottom-4 right-4 w-48" : "bottom-4 right-4 w-64"
+        } transition-all duration-300`}
+      >
         <div className="relative rounded-xl overflow-hidden shadow-lg">
-          <Webcam
-            ref={webcamRef}
-            mirrored
-            className="w-full"
-          />
+          <Webcam ref={webcamRef} mirrored className="w-full" />
           <button
             onClick={() => setIsCameraMinimized(!isCameraMinimized)}
             className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-colors"
@@ -531,7 +681,7 @@ const ProblemSolve = () => {
       {/* Notifications */}
       <AnimatePresence>
         {showWarning && (
-          <motion.div 
+          <motion.div
             className="fixed top-4 right-4 bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-lg z-50"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -539,7 +689,9 @@ const ProblemSolve = () => {
           >
             <div className="flex items-center gap-2">
               <AlertCircle className="text-red-500" />
-              <p className="font-medium">Warning: Suspicious activity detected!</p>
+              <p className="font-medium">
+                Warning: Suspicious activity detected!
+              </p>
             </div>
           </motion.div>
         )}
@@ -548,30 +700,78 @@ const ProblemSolve = () => {
       {/* Test Results Modal */}
       <AnimatePresence>
         {testResults && (
-          <motion.div 
+          <motion.div
             className={`fixed top-4 left-1/2 transform -translate-x-1/2 ${
-              testResults.passed ? 'bg-green-100 border-green-200 text-green-700' : 'bg-red-100 border-red-200 text-red-700'
+              testResults.passed
+                ? "bg-green-100 border-green-200 text-green-700"
+                : "bg-red-100 border-red-200 text-red-700"
             } px-6 py-4 rounded-xl shadow-lg z-50 border`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <div className="flex items-center gap-2">
-              {testResults.passed ? (
-                <>
-                  <CheckCircle size={16} />
-                  <p className="font-medium">All test cases passed! You can now submit your solution.</p>
-                </>
-              ) : (
-                <>
-                  <AlertCircle size={16} />
-                  <p className="font-medium">{testResults.error}</p>
-                </>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                {testResults.passed ? (
+                  <>
+                    <CheckCircle size={16} />
+                    <p className="font-medium">
+                      All test cases passed! You can now submit your solution.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={16} />
+                    <p className="font-medium">{testResults.error}</p>
+                  </>
+                )}
+              </div>
+              {testResults.details && (
+                <div className="mt-2">
+                  <div className="font-semibold mb-1">Test Case Results:</div>
+                  <ul className="text-xs">
+                    {testResults.details.map((tc, idx) => (
+                      <li key={idx}>
+                        <span className={tc.passed ? "text-green-600" : "text-red-600"}>
+                          [{tc.passed ? "PASS" : "FAIL"}]
+                        </span>{" "}
+                        <span>Input: {tc.input} | Output: {tc.output}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Confirmation Modal for navigation */}
+      {showNavConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Are you sure you want to exit?</h2>
+            <p className="mb-6">You have unsaved code. If you leave, your code will be lost.</p>
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                onClick={() => setShowNavConfirm(false)}
+              >
+                Continue Coding
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={() => {
+                  setShowNavConfirm(false);
+                  setIsDirty(false);
+                  navigate("/userDashboard/user-problems");
+                }}
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
