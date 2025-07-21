@@ -1,9 +1,10 @@
 const Submission = require("../models/Submission");
 const Problem = require("../models/Problem");
 const { executeCode } = require("../utils/codeExecution");
+const User = require("../models/User");
 
 const submitCode = async (req, res) => {
-  const { userId, problemId, language, code, violations, mode } = req.body;
+  const { userId, problemId, language, code, violations, mode, elapsedTime } = req.body;
 
   try {
     const problem = await Problem.findById(problemId);
@@ -43,11 +44,24 @@ const submitCode = async (req, res) => {
     }
 
     const endTime = new Date();
-    const executionTime = endTime - startTime;
+    const executionTime = Math.floor((endTime - startTime) / 1000); // in seconds
+    // Use elapsedTime from frontend if provided, else fallback to executionTime
+    const timeTaken = typeof elapsedTime === 'number' ? elapsedTime : executionTime;
 
     // Only save submission for 'submit' mode
     let submission = null;
     if (mode === 'submit') {
+      // Check if user already solved this problem
+      const alreadySolved = await Submission.findOne({ userId, problemId, status: 'Accepted' });
+      // Count previous attempts for this user/problem
+      const previousAttempts = await Submission.countDocuments({ userId, problemId });
+      // Penalty scoring: 30 for first, 20 for second, 10 for third+
+      let score = 0;
+      if (passedTests === problem.testCases.length) {
+        if (previousAttempts === 0) score = 30;
+        else if (previousAttempts === 1) score = 20;
+        else score = 10;
+      }
       submission = new Submission({
         userId,
         problemId,
@@ -71,22 +85,61 @@ const submitCode = async (req, res) => {
           totalTests: problem.testCases.length,
           passedTests,
           executionTime,
-          score: passedTests * 10, // 10 points per passed test
+          score,
+          timeTaken, // Always set timeTaken
         },
         submittedAt: startTime,
       });
       await submission.save();
 
-      // Update problem statistics
-      await Problem.findByIdAndUpdate(problemId, {
-        $inc: {
-          "statistics.totalSubmissions": 1,
-          "statistics.successfulSubmissions":
-            passedTests === problem.testCases.length ? 1 : 0,
-          "statistics.totalParticipants":
-            passedTests === problem.testCases.length ? 1 : 0,
-        },
-      });
+      // Only update stats and points if user hasn't solved before and this is an accepted solution
+      if (!alreadySolved && passedTests === problem.testCases.length) {
+        await Problem.findByIdAndUpdate(problemId, {
+          $inc: {
+            "statistics.totalSubmissions": 1,
+            "statistics.successfulSubmissions": 1,
+            "statistics.totalParticipants": 1,
+          },
+        });
+        // Update user points and solvedProblems
+        await User.findByIdAndUpdate(userId, {
+          $inc: { points: score },
+          $addToSet: { solvedProblems: problemId },
+        });
+      } else {
+        // Only increment totalSubmissions if not a new solve
+        await Problem.findByIdAndUpdate(problemId, {
+          $inc: {
+            "statistics.totalSubmissions": 1,
+          },
+        });
+      }
+      // Update user's problemScores array
+      const user = await User.findById(userId);
+      if (user) {
+        const existingScore = user.problemScores.find(
+          (ps) => ps.problemId.toString() === problemId.toString()
+        );
+        if (!existingScore && passedTests === problem.testCases.length) {
+          user.problemScores.push({
+            problemId,
+            score,
+            timeTaken,
+            attempts: previousAttempts + 1,
+          });
+        } else if (existingScore && passedTests === problem.testCases.length) {
+          // Only update if this attempt is better (higher score or less time)
+          if (score > existingScore.score || (score === existingScore.score && timeTaken < existingScore.timeTaken)) {
+            existingScore.score = score;
+            existingScore.timeTaken = timeTaken;
+            existingScore.attempts = previousAttempts + 1;
+          }
+        } else if (existingScore) {
+          // If not accepted, just update attempts
+          existingScore.attempts = previousAttempts + 1;
+        }
+        await user.save();
+      }
     }
 
     // Send detailed response
@@ -103,10 +156,12 @@ const submitCode = async (req, res) => {
           totalTests: testCasesToRun.length,
           passedTests,
           executionTime,
-          score: passedTests * 10,
+          score: submission ? submission.metrics.score : 0,
+          timeTaken,
         },
         violations: violations,
         startTime: startTime.toISOString(),
+        timeTaken,
       },
     });
   } catch (error) {
@@ -132,9 +187,11 @@ const getSubmissionHistory = async (req, res) => {
       success: true,
       submissions: submissions.map((sub) => ({
         ...sub,
+        problemId: String(sub.problemId),
         score: sub.metrics.score,
         passedTests: sub.metrics.passedTests,
         totalTests: sub.metrics.totalTests,
+        timeTaken: sub.metrics.timeTaken || sub.metrics.executionTime || null,
         submittedAt: sub.submittedAt.toISOString(),
       })),
     });

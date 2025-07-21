@@ -117,6 +117,8 @@ const ResultsPage = () => {
   const state = location.state || {};
   const testCases = Array.isArray(state.testCases) ? state.testCases : [];
   const startTime = state.startTime ? new Date(state.startTime) : new Date();
+  const timeTaken = state.metrics?.timeTaken || state.timeTaken || 0;
+  const score = state.metrics?.score || 0;
   const allPassed = testCases.length > 0 && testCases.every(tc => tc.passed);
   const failedCases = testCases.filter(tc => !tc.passed);
 
@@ -197,7 +199,6 @@ const ResultsPage = () => {
   // Calculate time spent using strict formatting (exact time)
   const timeSpent = formatDistanceStrict(startTime, new Date(), { addSuffix: false });
   const passedTests = testCases.filter((tc) => tc.passed).length;
-  const score = calculateScore(passedTests);
   const totalViolations = 
     violationsState.copyPaste + 
     violationsState.tabChanges + 
@@ -405,9 +406,15 @@ const ResultsPage = () => {
               />
               <StatsCard
                 icon={<Clock className="text-blue-500" />}
-                value={timeSpent}
+                value={typeof timeTaken === 'number' ? `${timeTaken}s` : timeTaken}
                 label="Time Taken"
                 color="bg-blue-50"
+              />
+              <StatsCard
+                icon={<CheckCircle className="text-green-500" />}
+                value={score}
+                label="Score"
+                color="bg-green-50"
               />
               <button onClick={() => setShowViolations(true)} className="text-left w-full">
                 <StatsCard

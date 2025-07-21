@@ -387,6 +387,7 @@ const ProblemSolve = () => {
       return;
     }
     try {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000); // Calculate at submit
       const result = await submitSolution({
         userId,
         problemId: id,
@@ -394,6 +395,7 @@ const ProblemSolve = () => {
         language: selectedLanguage?.name || selectedLanguage?.id,
         violations,
         mode: 'submit', // Check all test cases
+        elapsedTime: elapsed // Use direct calculation
       });
       const allPassed = result.results.testCases.every(tc => tc.passed);
       setCanSubmit(allPassed);
@@ -411,7 +413,11 @@ const ProblemSolve = () => {
         navigate(`/problems/${id}/results`, {
           state: {
             testCases: result.results.testCases,
-            metrics: result.results.metrics,
+            metrics: {
+              ...result.results.metrics,
+              timeTaken: result.results.timeTaken,
+              score: result.results.metrics.score,
+            },
             violations,
             startTime,
           },

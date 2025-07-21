@@ -62,6 +62,7 @@ const submissionSchema = new mongoose.Schema({
     passedTests: Number,
     executionTime: Number,
     score: Number,
+    timeTaken: Number,
   },
   submittedAt: {
     type: Date,

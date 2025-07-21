@@ -29,7 +29,7 @@ exports.createProblem = async (req, res) => {
 exports.getAllProblems = async (req, res) => {
     try {
         const problems = await Problem.find();
-        res.status(200).json(problems);
+        res.status(200).json(problems.map(p => p.toJSON()));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -43,7 +43,7 @@ exports.getParticularProblems = async (req, res) => {
         if (!problem) {
             return res.status(404).json({ error: "Problem not found" });
         }
-        res.status(200).json(problem); // Return the object, not an array
+        res.status(200).json(problem.toJSON()); // Return the object, not an array
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

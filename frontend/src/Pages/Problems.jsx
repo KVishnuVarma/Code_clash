@@ -84,17 +84,18 @@ const Problems = () => {
 
   const isSolved = (problem) => {
     return submissions.some(
-      (sub) => sub.problemId === (problem._id || problem.id) && sub.status === "Accepted"
+      (sub) => String(sub.problemId) === String(problem._id || problem.id) && sub.status === "Accepted"
     );
   };
 
   const tableHeaders = [
-    { label: "Title", width: "25%" },
-    { label: "Difficulty", width: "15%" },
-    { label: "Success Rate", width: "15%" },
-    { label: "Status", width: "15%" },
-    { label: "Time Limit", width: "15%" },
-    { label: "Actions", width: "15%" },
+    { label: "Title", width: "20%" },
+    { label: "Difficulty", width: "12%" },
+    { label: "Success Rate", width: "13%" },
+    { label: "Status", width: "12%" },
+    { label: "Time Limit", width: "13%" },
+    { label: "Time Taken", width: "13%" },
+    { label: "Actions", width: "17%" },
   ];
 
   return (
@@ -254,7 +255,24 @@ const Problems = () => {
                           <div className="flex items-center gap-2">
                             <Clock size={16} className="text-gray-400" />
                             <span className="text-gray-600">
-                              {problem.timeLimit}
+                              {problem.timeLimit ? `${problem.timeLimit} min` : "-"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Clock size={16} className="text-gray-400" />
+                            <span className="text-gray-600">
+                              {isSolved(problem)
+                                ? (() => {
+                                    const sub = submissions.find(
+                                      (s) => String(s.problemId) === String(problem._id || problem.id) && s.status === "Accepted"
+                                    );
+                                    return sub && sub.metrics && (sub.metrics.timeTaken || sub.metrics.executionTime)
+                                      ? `${sub.metrics.timeTaken || sub.metrics.executionTime} s`
+                                      : "-";
+                                  })()
+                                : "-"}
                             </span>
                           </div>
                         </td>
