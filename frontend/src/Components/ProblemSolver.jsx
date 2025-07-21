@@ -340,8 +340,16 @@ const ProblemSolve = () => {
 
   const runCode = async () => {
     setTestResults(null);
+    const userId = user?._id;
+    if (!userId) {
+      setTestResults({
+        passed: false,
+        error: "User not logged in. Please log in to run code.",
+      });
+      setError("User not logged in. Please log in to run code.");
+      return;
+    }
     try {
-      const userId = user?._id;
       const result = await submitSolution({
         userId,
         problemId: id,
@@ -369,8 +377,16 @@ const ProblemSolve = () => {
 
   const handleSubmit = async () => {
     setTestResults(null);
+    const userId = user?._id;
+    if (!userId) {
+      setTestResults({
+        passed: false,
+        error: "User not logged in. Please log in to submit code.",
+      });
+      setError("User not logged in. Please log in to submit code.");
+      return;
+    }
     try {
-      const userId = user?._id;
       const result = await submitSolution({
         userId,
         problemId: id,
