@@ -48,3 +48,28 @@ exports.getParticularProblems = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Update an existing problem
+exports.updateProblem = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updateData = req.body;
+
+        const updatedProblem = await Problem.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProblem) {
+            return res.status(404).json({ error: "Problem not found" });
+        }
+
+        res.status(200).json({
+            message: "Problem updated successfully",
+            problem: updatedProblem
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

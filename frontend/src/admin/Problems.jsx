@@ -417,9 +417,8 @@ export default function Problems() {
     const isEditing = !!editingProblem;
     const method = isEditing ? "PUT" : "POST";
     const url = isEditing
-      ? `http://localhost:5000/api/problems/${editingProblem._id}`
+      ? `http://localhost:5000/api/problems/update/${editingProblem._id}`
       : "http://localhost:5000/api/problems/add";
-
     try {
       const response = await fetch(url, {
         method,
