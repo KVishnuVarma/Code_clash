@@ -117,6 +117,8 @@ const ResultsPage = () => {
   const state = location.state || {};
   const testCases = Array.isArray(state.testCases) ? state.testCases : [];
   const startTime = state.startTime ? new Date(state.startTime) : new Date();
+  const allPassed = testCases.length > 0 && testCases.every(tc => tc.passed);
+  const failedCases = testCases.filter(tc => !tc.passed);
 
   // Handle violations coming from the console or other sources
   useEffect(() => {
@@ -356,6 +358,18 @@ const ResultsPage = () => {
 
           {/* Score Card */}
           <div className="p-8">
+            {!allPassed && failedCases.length > 0 && (
+              <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h2 className="text-lg font-bold text-red-700 mb-2">Some test cases failed</h2>
+                <ul className="list-disc pl-6 text-red-700">
+                  {failedCases.map((tc, idx) => (
+                    <li key={idx}>
+                      <span className="font-semibold">Input:</span> <span className="font-mono">{tc.input}</span> <span className="font-semibold">Expected:</span> <span className="font-mono">{tc.output}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}

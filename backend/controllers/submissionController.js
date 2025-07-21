@@ -3,7 +3,7 @@ const Problem = require("../models/Problem");
 const { executeCode } = require("../utils/codeExecution");
 
 const submitCode = async (req, res) => {
-  const { userId, problemId, language, code, violations } = req.body;
+  const { userId, problemId, language, code, violations, mode } = req.body;
 
   try {
     const problem = await Problem.findById(problemId);
@@ -15,28 +15,24 @@ const submitCode = async (req, res) => {
     const testResults = [];
     let passedTests = 0;
 
+    // Determine which test cases to run
+    let testCasesToRun = problem.testCases;
+    if (mode === 'run') {
+      testCasesToRun = problem.testCases.slice(0, 1); // Only first test case
+    }
+
     // Execute each test case and collect detailed results
-    for (let testCase of problem.testCases) {
+    for (let testCase of testCasesToRun) {
       let inputToUse = testCase.input;
       if (language.toLowerCase() === 'python' && /^s\s*=\s*/.test(inputToUse)) {
         inputToUse = inputToUse.replace(/^s\s*=\s*/, '').trim();
       }
-      // Add debug logging
-      console.log('--- Test Case Debug ---');
-      console.log('Raw Input:', testCase.input);
-      console.log('Processed Input:', inputToUse);
-      console.log('Expected Output:', testCase.output);
       const result = await executeCode(language, code, inputToUse);
-      console.log('User Output:', result.stdout);
-      console.log('----------------------');
-
       if (!result || result.stdout === null) {
         return res.status(500).json({ error: "Code execution failed" });
       }
-
       const passed = result.stdout.trim() === testCase.output.trim();
       if (passed) passedTests++;
-
       testResults.push({
         input: testCase.input,
         expectedOutput: testCase.output,
@@ -49,60 +45,67 @@ const submitCode = async (req, res) => {
     const endTime = new Date();
     const executionTime = endTime - startTime;
 
-    // Create submission with detailed information
-    const submission = new Submission({
-      userId,
-      problemId,
-      language,
-      code,
-      status:
-        passedTests === problem.testCases.length ? "Accepted" : "Wrong Answer",
-      testResults,
-      violations: {
-        copyPaste: violations?.copyPaste || 0,
-        tabChanges: violations?.tabChanges || 0,
-        mobileDetected: violations?.mobileDetected || false,
-        details:
-          violations?.details?.map((v) => ({
-            type: v.type,
-            timestamp: new Date(v.timestamp),
-            description: v.description,
-          })) || [],
-      },
-      metrics: {
-        totalTests: problem.testCases.length,
-        passedTests,
-        executionTime,
-        score: passedTests * 10, // 10 points per passed test
-      },
-      submittedAt: startTime,
-    });
+    // Only save submission for 'submit' mode
+    let submission = null;
+    if (mode === 'submit') {
+      submission = new Submission({
+        userId,
+        problemId,
+        language,
+        code,
+        status:
+          passedTests === problem.testCases.length ? "Accepted" : "Wrong Answer",
+        testResults,
+        violations: {
+          copyPaste: violations?.copyPaste || 0,
+          tabChanges: violations?.tabChanges || 0,
+          mobileDetected: violations?.mobileDetected || false,
+          details:
+            violations?.details?.map((v) => ({
+              type: v.type,
+              timestamp: new Date(v.timestamp),
+              description: v.description,
+            })) || [],
+        },
+        metrics: {
+          totalTests: problem.testCases.length,
+          passedTests,
+          executionTime,
+          score: passedTests * 10, // 10 points per passed test
+        },
+        submittedAt: startTime,
+      });
+      await submission.save();
 
-    await submission.save();
-
-    // Update problem statistics
-    await Problem.findByIdAndUpdate(problemId, {
-      $inc: {
-        "statistics.totalSubmissions": 1,
-        "statistics.successfulSubmissions":
-          passedTests === problem.testCases.length ? 1 : 0,
-        "statistics.totalParticipants":
-          passedTests === problem.testCases.length ? 1 : 0,
-      },
-    });
+      // Update problem statistics
+      await Problem.findByIdAndUpdate(problemId, {
+        $inc: {
+          "statistics.totalSubmissions": 1,
+          "statistics.successfulSubmissions":
+            passedTests === problem.testCases.length ? 1 : 0,
+          "statistics.totalParticipants":
+            passedTests === problem.testCases.length ? 1 : 0,
+        },
+      });
+    }
 
     // Send detailed response
     res.json({
       success: true,
-      submissionId: submission._id,
+      submissionId: submission ? submission._id : null,
       results: {
         testCases: testResults.map((test) => ({
           input: test.input,
           output: test.actualOutput,
           passed: test.passed,
         })),
-        metrics: submission.metrics,
-        violations: submission.violations,
+        metrics: {
+          totalTests: testCasesToRun.length,
+          passedTests,
+          executionTime,
+          score: passedTests * 10,
+        },
+        violations: violations,
         startTime: startTime.toISOString(),
       },
     });

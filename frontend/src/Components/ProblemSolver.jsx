@@ -341,23 +341,23 @@ const ProblemSolve = () => {
   const runCode = async () => {
     setTestResults(null);
     try {
-      // Call backend to check code against all test cases
-      const userId = user?._id; // Use real user ObjectId from context/auth
+      const userId = user?._id;
       const result = await submitSolution({
         userId,
         problemId: id,
         code,
         language: selectedLanguage?.name || selectedLanguage?.id,
         violations,
+        mode: 'run', // Only check the first test case
       });
-      // result.results.testCases: [{input, output, passed}]
-      const allPassed = result.results.testCases.every(tc => tc.passed);
-      setCanSubmit(allPassed);
+      // Only show the first test case result for run
+      const firstTest = result.results.testCases[0];
+      setCanSubmit(false); // Only allow submit after all pass
       setTestResults({
-        passed: allPassed,
-        details: result.results.testCases,
+        passed: firstTest.passed,
+        details: [firstTest],
         metrics: result.results.metrics,
-        error: allPassed ? null : "Some test cases failed. Check details.",
+        error: firstTest.passed ? null : "First test case failed. Check details.",
       });
     } catch (error) {
       setTestResults({
@@ -368,22 +368,44 @@ const ProblemSolve = () => {
   };
 
   const handleSubmit = async () => {
-    if (!testResults?.passed) return;
+    setTestResults(null);
     try {
-      // Stop webcam and screen recording
-      if (webcamRef.current && webcamRef.current.stream) {
-        webcamRef.current.stream.getTracks().forEach((track) => track.stop());
-      }
-      // Pass all required fields to ResultsPage
-      navigate(`/problems/${id}/results`, {
-        state: {
-          testCases: testResults.details,
-          metrics: testResults.metrics,
-          violations,
-          startTime,
-        },
+      const userId = user?._id;
+      const result = await submitSolution({
+        userId,
+        problemId: id,
+        code,
+        language: selectedLanguage?.name || selectedLanguage?.id,
+        violations,
+        mode: 'submit', // Check all test cases
       });
+      const allPassed = result.results.testCases.every(tc => tc.passed);
+      setCanSubmit(allPassed);
+      setTestResults({
+        passed: allPassed,
+        details: result.results.testCases,
+        metrics: result.results.metrics,
+        error: allPassed ? null : "Some test cases failed. Check details.",
+      });
+      if (allPassed) {
+        // Stop webcam and screen recording
+        if (webcamRef.current && webcamRef.current.stream) {
+          webcamRef.current.stream.getTracks().forEach((track) => track.stop());
+        }
+        navigate(`/problems/${id}/results`, {
+          state: {
+            testCases: result.results.testCases,
+            metrics: result.results.metrics,
+            violations,
+            startTime,
+          },
+        });
+      }
     } catch (error) {
+      setTestResults({
+        passed: false,
+        error: error.message || "Failed to submit code. Please try again.",
+      });
       setError("Failed to submit code. Please try again.");
     }
   };
@@ -505,15 +527,15 @@ const ProblemSolve = () => {
                   <Play size={18} />
                   Run Code
                 </button>
-                {canSubmit && (
-                  <button
-                    onClick={handleSubmit}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                  >
-                    <Send size={18} />
-                    Submit Solution
-                  </button>
-                )}
+                <button
+                  onClick={handleSubmit}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  disabled={!testResults || !testResults.passed}
+                  style={{ opacity: !testResults || !testResults.passed ? 0.5 : 1 }}
+                >
+                  <Send size={18} />
+                  Submit Solution
+                </button>
               </div>
             </div>
           </div>

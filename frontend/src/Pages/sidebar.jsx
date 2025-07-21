@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
@@ -10,7 +10,7 @@ import {
   LogOut
 } from "lucide-react";
 
-const Sidebar = () => {
+const Sidebar = ({ onExpandChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -18,6 +18,15 @@ const Sidebar = () => {
   const handleLogout = () => {
     localStorage.removeItem("userToken");
     navigate("/");
+  };
+
+  const handleMouseEnter = () => {
+    setIsExpanded(true);
+    if (onExpandChange) onExpandChange(true);
+  };
+  const handleMouseLeave = () => {
+    setIsExpanded(false);
+    if (onExpandChange) onExpandChange(false);
   };
 
   const sidebarVariants = {
@@ -49,12 +58,13 @@ const Sidebar = () => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 h-screen bg-white shadow-lg flex flex-col"
+      className="h-screen bg-white shadow-lg flex flex-col"
       initial="collapsed"
       animate={isExpanded ? "expanded" : "collapsed"}
       variants={sidebarVariants}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{ minWidth: isExpanded ? "240px" : "85px" }}
     >
       {/* Logo/Header */}
       <div className="flex items-center justify-center h-20 bg-gray-50 border-b border-gray-100">
@@ -84,9 +94,9 @@ const Sidebar = () => {
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-4 space-y-2">
         {menuItems.map((item) => (
-          <Link
+          <a
             key={item.path}
-            to={item.path}
+            href={item.path}
             className={`
               flex items-center px-3 py-3 rounded-lg transition-all duration-200
               ${location.pathname === item.path
@@ -108,7 +118,7 @@ const Sidebar = () => {
                 </motion.span>
               )}
             </AnimatePresence>
-          </Link>
+          </a>
         ))}
       </nav>
 

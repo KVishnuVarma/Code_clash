@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import Sidebar from "./Sidebar";
+import Sidebar from "./sidebar";
 import { useAuth } from "../context/AuthContext";
 import { submitSolution, getUserSubmissions } from "../services/problemService";
 
@@ -24,6 +24,7 @@ const Problems = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState([]);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   useEffect(() => {
     const fetchProblems = async () => {
@@ -98,8 +99,11 @@ const Problems = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 ml-[85px] p-8">
+      <Sidebar onExpandChange={setIsSidebarExpanded} />
+      <div
+        className="flex-1 p-8 transition-all duration-300"
+        style={{ marginLeft: isSidebarExpanded ? 40 : 15 }}
+      >
         {/* Header Section */}
         <motion.div
           className="mb-8"
