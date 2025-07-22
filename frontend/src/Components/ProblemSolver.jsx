@@ -17,7 +17,7 @@ import {
   Languages,
   Timer,
 } from "lucide-react";
-import { submitSolution } from "../services/problemService";
+import { submitSolution, getUserProblemSubmissions } from "../services/problemService";
 import { useAuth } from "../context/AuthContext";
 import Confetti from "react-confetti";
 
@@ -42,6 +42,7 @@ const ProblemSolve = () => {
   const [code, setCode] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const { user } = useAuth();
+  const [allSubmissions, setAllSubmissions] = useState([]);
 
   const webcamRef = useRef(null);
   const socketRef = useRef(null);
@@ -401,6 +402,16 @@ const ProblemSolve = () => {
         setFinalTime(result.results.timeTaken);
         setCanSubmit(false); // Disable submit after success
         setActiveTab("Submissions"); // Switch to Submissions tab
+        // Stop the timer and freeze elapsedTime
+        if (timerInterval.current) {
+          clearInterval(timerInterval.current);
+          timerInterval.current = null;
+        }
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+        // Fetch updated submissions
+        if (user?._id && id) {
+          getUserProblemSubmissions(user._id, id).then(setAllSubmissions);
+        }
       }
     } catch (error) {
       setTestResults({
@@ -452,6 +463,37 @@ const ProblemSolve = () => {
   const handleCodeChange = (value) => {
     setCode(value || "");
     setIsDirty(true);
+    // Save code to localStorage per problem/language
+    if (selectedLanguage && id) {
+      localStorage.setItem(
+        `codeclash_code_${id}_${selectedLanguage.id}`,
+        value || ""
+      );
+    }
+  };
+
+  // Load code from localStorage or template on language/problem change
+  useEffect(() => {
+    if (selectedLanguage && id) {
+      const saved = localStorage.getItem(
+        `codeclash_code_${id}_${selectedLanguage.id}`
+      );
+      if (saved !== null) {
+        setCode(saved);
+      } else {
+        setCode(selectedLanguage.template || "");
+      }
+    }
+    // eslint-disable-next-line
+  }, [selectedLanguage, id]);
+
+  // Refresh button handler: clear code and localStorage, reset to template
+  const handleRefreshCode = () => {
+    if (selectedLanguage && id) {
+      localStorage.removeItem(`codeclash_code_${id}_${selectedLanguage.id}`);
+      setCode(selectedLanguage.template || "");
+      setIsDirty(true);
+    }
   };
 
   // Custom back button handler
@@ -472,6 +514,20 @@ const ProblemSolve = () => {
       setWindowSize({ width: rect.width, height: rect.height });
     }
   }, [showCelebration]);
+
+  // Fetch all submissions for this user/problem on mount and after submit
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      if (!user?._id || !id) return;
+      try {
+        const subs = await getUserProblemSubmissions(user._id, id);
+        setAllSubmissions(subs);
+      } catch (err) {
+        setAllSubmissions([]);
+      }
+    };
+    fetchSubmissions();
+  }, [user, id]);
 
   if (isExamTerminated) {
     return (
@@ -591,10 +647,6 @@ const ProblemSolve = () => {
                 {problem.difficulty}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <Code size={16} />
-              <span>Problem #{id}</span>
-            </div>
           </div>
   
           {/* Tabbed Navigation */}
@@ -675,43 +727,49 @@ const ProblemSolve = () => {
                     </div>
                   </>
                 )}
-                {submissionSummary ? (
+                {allSubmissions.length > 0 ? (
                   <div className="mb-8">
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="text-green-600" size={28} />
-                        <span className="text-2xl font-bold text-green-800">All Test Cases Passed!</span>
-                      </div>
-                      <div className="flex gap-8 mt-4">
-                        <div className="flex flex-col items-center">
-                          <span className="text-lg font-semibold text-gray-700">Score</span>
-                          <span className="text-3xl font-bold text-green-700">{finalScore}</span>
+                    {allSubmissions.map((sub, idx) => (
+                      <div key={sub._id || idx} className="bg-green-50 border border-green-200 rounded-xl p-6 mb-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <CheckCircle className={sub.status === "Accepted" ? "text-green-600" : "text-red-600"} size={28} />
+                          <span className={`text-2xl font-bold ${sub.status === "Accepted" ? "text-green-800" : "text-red-800"}`}>{sub.status === "Accepted" ? "All Test Cases Passed!" : "Wrong Answer"}</span>
                         </div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-lg font-semibold text-gray-700">Time</span>
-                          <span className="text-3xl font-bold text-blue-700">{finalTime}s</span>
+                        <div className="flex gap-8 mt-4">
+                          <div className="flex flex-col items-center">
+                            <span className="text-lg font-semibold text-gray-700">Score</span>
+                            <span className="text-3xl font-bold text-green-700">{sub.score}</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-lg font-semibold text-gray-700">Time</span>
+                            <span className="text-3xl font-bold text-blue-700">{sub.timeTaken}s</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-lg font-semibold text-gray-700">Submitted</span>
+                            <span className="text-md text-gray-600">{new Date(sub.submittedAt).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="mb-4 mt-4">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-2">Test Cases</h3>
+                          <ul className="space-y-2">
+                            {sub.testResults && sub.testResults.map((tc, tcidx) => (
+                              <li key={tcidx} className="bg-white border border-gray-200 rounded p-3 flex flex-col">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-gray-700">Case {tcidx + 1}:</span>
+                                  {tc.passed ? (
+                                    <span className="text-green-600 font-bold">Passed</span>
+                                  ) : (
+                                    <span className="text-red-600 font-bold">Failed</span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
+                                <div className="text-xs text-gray-600">Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                    </div>
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Test Cases</h3>
-                      <ul className="space-y-2">
-                        {submissionSummary.testCases.map((tc, idx) => (
-                          <li key={idx} className="bg-white border border-gray-200 rounded p-3 flex flex-col">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-gray-700">Case {idx + 1}:</span>
-                              {tc.passed ? (
-                                <span className="text-green-600 font-bold">Passed</span>
-                              ) : (
-                                <span className="text-red-600 font-bold">Failed</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
-                            <div className="text-xs text-gray-600">Output: <span className="font-mono">{tc.output}</span></div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-gray-500 text-center mt-8">No submissions yet.</div>
@@ -767,6 +825,14 @@ const ProblemSolve = () => {
                 >
                   <Send size={16} />
                   Submit
+                </button>
+                <button
+                  onClick={handleRefreshCode}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition-colors"
+                  title="Reset code to default template"
+                >
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4v5h.582M20 20v-5h-.581M5.077 19A9 9 0 1 1 19 5.077"/></svg>
+                  Refresh
                 </button>
               </div>
             </div>

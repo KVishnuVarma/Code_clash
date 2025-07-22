@@ -22,3 +22,13 @@ export async function getUserSubmissions(userId) {
   return data.submissions || [];
 }
 
+export async function getUserProblemSubmissions(userId, problemId) {
+  const response = await fetch(`http://localhost:5000/api/submissions/history?userId=${userId}&problemId=${problemId}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch submissions');
+  }
+  const data = await response.json();
+  return data.submissions || [];
+}
+
