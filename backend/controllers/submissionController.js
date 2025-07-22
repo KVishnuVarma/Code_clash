@@ -226,8 +226,54 @@ const getSubmissionDetails = async (req, res) => {
   }
 };
 
+// Get all users who have submitted to a specific problem
+const getProblemParticipants = async (req, res) => {
+  const { problemId } = req.params;
+  try {
+    // Find all submissions for the problem
+    const submissions = await Submission.find({ problemId })
+      .populate('userId', 'name email points')
+      .lean();
+    if (!submissions.length) {
+      return res.json({ participants: [] });
+    }
+    // Map userId to best submission (highest score, then fastest time)
+    const userMap = {};
+    for (const sub of submissions) {
+      const uid = String(sub.userId._id);
+      if (!userMap[uid]) {
+        userMap[uid] = { user: sub.userId, submission: sub };
+      } else {
+        const prev = userMap[uid].submission;
+        // Prefer higher score, then faster time
+        if (
+          sub.metrics.score > prev.metrics.score ||
+          (sub.metrics.score === prev.metrics.score && (sub.metrics.timeTaken || 99999) < (prev.metrics.timeTaken || 99999))
+        ) {
+          userMap[uid] = { user: sub.userId, submission: sub };
+        }
+      }
+    }
+    const participants = Object.values(userMap).map(({ user, submission }) => ({
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      points: user.points,
+      score: submission.metrics.score,
+      timeTaken: submission.metrics.timeTaken,
+      status: submission.status,
+      submittedAt: submission.submittedAt,
+    }));
+    res.json({ participants });
+  } catch (error) {
+    console.error('Error fetching problem participants:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   submitCode,
   getSubmissionHistory,
   getSubmissionDetails,
+  getProblemParticipants,
 };

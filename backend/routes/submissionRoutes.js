@@ -3,6 +3,7 @@ const {
   submitCode,
   getSubmissionHistory,
   getSubmissionDetails,
+  getProblemParticipants,
 } = require("../controllers/submissionController");
 
 const router = express.Router();
@@ -15,5 +16,8 @@ router.get("/history", getSubmissionHistory);
 
 // Get detailed submission information
 router.get("/details/:submissionId", getSubmissionDetails);
+
+// Get all users who have submitted to a specific problem
+router.get("/participants/:problemId", getProblemParticipants);
 
 module.exports = router;

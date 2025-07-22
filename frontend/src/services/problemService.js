@@ -32,3 +32,13 @@ export async function getUserProblemSubmissions(userId, problemId) {
   return data.submissions || [];
 }
 
+export async function getProblemParticipants(problemId) {
+  const response = await fetch(`http://localhost:5000/api/submissions/participants/${problemId}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch participants');
+  }
+  const data = await response.json();
+  return data.participants || [];
+}
+

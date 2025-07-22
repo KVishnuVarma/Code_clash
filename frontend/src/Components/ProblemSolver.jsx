@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import Webcam from "react-webcam";
 import Editor from "@monaco-editor/react";
 import {
@@ -17,7 +17,7 @@ import {
   Languages,
   Timer,
 } from "lucide-react";
-import { submitSolution, getUserProblemSubmissions } from "../services/problemService";
+import { submitSolution, getUserProblemSubmissions, getProblemParticipants } from "../services/problemService";
 import { useAuth } from "../context/AuthContext";
 import Confetti from "react-confetti";
 
@@ -43,6 +43,8 @@ const ProblemSolve = () => {
   const [isDirty, setIsDirty] = useState(false);
   const { user } = useAuth();
   const [allSubmissions, setAllSubmissions] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [showParticipants, setShowParticipants] = useState(false);
 
   const webcamRef = useRef(null);
   const socketRef = useRef(null);
@@ -56,8 +58,6 @@ const ProblemSolve = () => {
   const [showCelebration, setShowCelebration] = useState(false);
   // Add state for submission summary and score
   const [submissionSummary, setSubmissionSummary] = useState(null);
-  const [finalScore, setFinalScore] = useState(null);
-  const [finalTime, setFinalTime] = useState(null);
   // Add tab state for Description/Submissions
   const [activeTab, setActiveTab] = useState("Description");
 
@@ -398,9 +398,6 @@ const ProblemSolve = () => {
           violations,
           startTime,
         });
-        setFinalScore(result.results.metrics.score);
-        setFinalTime(result.results.timeTaken);
-        setCanSubmit(false); // Disable submit after success
         setActiveTab("Submissions"); // Switch to Submissions tab
         // Stop the timer and freeze elapsedTime
         if (timerInterval.current) {
@@ -463,20 +460,20 @@ const ProblemSolve = () => {
   const handleCodeChange = (value) => {
     setCode(value || "");
     setIsDirty(true);
-    // Save code to localStorage per problem/language
-    if (selectedLanguage && id) {
+    // Save code to localStorage per user/problem/language
+    if (user && selectedLanguage && id) {
       localStorage.setItem(
-        `codeclash_code_${id}_${selectedLanguage.id}`,
+        `codeclash_code_${user._id}_${id}_${selectedLanguage.id}`,
         value || ""
       );
     }
   };
-
+ 
   // Load code from localStorage or template on language/problem change
   useEffect(() => {
-    if (selectedLanguage && id) {
+    if (user && selectedLanguage && id) {
       const saved = localStorage.getItem(
-        `codeclash_code_${id}_${selectedLanguage.id}`
+        `codeclash_code_${user._id}_${id}_${selectedLanguage.id}`
       );
       if (saved !== null) {
         setCode(saved);
@@ -485,12 +482,12 @@ const ProblemSolve = () => {
       }
     }
     // eslint-disable-next-line
-  }, [selectedLanguage, id]);
+  }, [user, selectedLanguage, id]);
 
   // Refresh button handler: clear code and localStorage, reset to template
   const handleRefreshCode = () => {
-    if (selectedLanguage && id) {
-      localStorage.removeItem(`codeclash_code_${id}_${selectedLanguage.id}`);
+    if (user && selectedLanguage && id) {
+      localStorage.removeItem(`codeclash_code_${user._id}_${id}_${selectedLanguage.id}`);
       setCode(selectedLanguage.template || "");
       setIsDirty(true);
     }
@@ -522,12 +519,26 @@ const ProblemSolve = () => {
       try {
         const subs = await getUserProblemSubmissions(user._id, id);
         setAllSubmissions(subs);
-      } catch (err) {
+      } catch {
         setAllSubmissions([]);
       }
     };
     fetchSubmissions();
   }, [user, id]);
+
+  // Fetch participants for this problem
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      if (!id) return;
+      try {
+        const data = await getProblemParticipants(id);
+        setParticipants(data);
+      } catch {
+        setParticipants([]);
+      }
+    };
+    fetchParticipants();
+  }, [id]);
 
   if (isExamTerminated) {
     return (
@@ -610,6 +621,44 @@ const ProblemSolve = () => {
             <div className="flex items-center gap-2 text-gray-600">
               <Timer size={18} />
               <span className="font-mono">{formatTime(elapsedTime)}</span>
+            </div>
+            {/* Participants Button */}
+            <div className="relative flex items-center">
+              <button
+                className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs font-semibold border border-blue-200"
+                onClick={() => setShowParticipants((v) => !v)}
+                title="View Participants"
+              >
+                <Users size={16} />
+                <span>{participants.length}</span>
+              </button>
+              {/* Dropdown/modal for participants */}
+              {showParticipants && (
+                <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded shadow-lg z-50 max-h-72 overflow-auto">
+                  <div className="p-2 border-b font-semibold text-gray-700 flex items-center gap-2">
+                    <Users size={16} /> Participants ({participants.length})
+                    <button className="ml-auto text-gray-400 hover:text-red-500" onClick={() => setShowParticipants(false)}>✕</button>
+                  </div>
+                  {participants.length === 0 ? (
+                    <div className="p-4 text-gray-500 text-center">No participants yet.</div>
+                  ) : (
+                    <ul className="divide-y divide-gray-100">
+                      {participants.map((p) => (
+                        <li key={p.userId} className="p-2 flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-800">{p.name}</span>
+                            <span className={`text-xs rounded px-2 py-0.5 ml-2 ${p.status === 'Accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{p.status}</span>
+                          </div>
+                          <div className="flex gap-4 text-xs text-gray-600 mt-1">
+                            <span>Score: <span className="font-semibold text-gray-800">{p.score}</span></span>
+                            <span>Time: <span className="font-semibold text-gray-800">{p.timeTaken}s</span></span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
             {showProctoring && (
               <div className="flex items-center gap-2">
