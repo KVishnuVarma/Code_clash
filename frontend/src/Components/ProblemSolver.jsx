@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Webcam from "react-webcam";
 import Editor from "@monaco-editor/react";
-import { format } from "date-fns";
 import {
   ArrowLeft,
   Play,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { submitSolution } from "../services/problemService";
 import { useAuth } from "../context/AuthContext";
+import Confetti from "react-confetti";
 
 const ProblemSolve = () => {
   const { id } = useParams();
@@ -28,7 +28,6 @@ const ProblemSolve = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
-  const [isCameraMinimized, setIsCameraMinimized] = useState(false);
   const [violations, setViolations] = useState({
     tabChanges: 0,
     copyPaste: 0,
@@ -50,7 +49,16 @@ const ProblemSolve = () => {
   const mobileCheckInterval = useRef(null);
   const timerInterval = useRef(null);
   const [showNavConfirm, setShowNavConfirm] = useState(false);
-  const [pendingNav, setPendingNav] = useState(null);
+  // Add state for showing webcam modal
+  const [showWebcam, setShowWebcam] = useState(false);
+  // Add state for celebration
+  const [showCelebration, setShowCelebration] = useState(false);
+  // Add state for submission summary and score
+  const [submissionSummary, setSubmissionSummary] = useState(null);
+  const [finalScore, setFinalScore] = useState(null);
+  const [finalTime, setFinalTime] = useState(null);
+  // Add tab state for Description/Submissions
+  const [activeTab, setActiveTab] = useState("Description");
 
   // Remove mockRunCode and related logic
 
@@ -115,7 +123,7 @@ const ProblemSolve = () => {
             throw new Error("API not available");
           }
           data = await response.json();
-        } catch (apiError) {
+        } catch {
           console.log("API not available, using mock data");
           data = mockProblem;
         }
@@ -338,6 +346,72 @@ const ProblemSolve = () => {
     };
   }, [id, violations]);
 
+  // On successful submit, show celebration and hide camera/warning
+  const handleSubmit = async () => {
+    setTestResults(null);
+    const userId = user?._id;
+    if (!userId) {
+      setTestResults({
+        passed: false,
+        error: "User not logged in. Please log in to submit code.",
+      });
+      setError("User not logged in. Please log in to submit code.");
+      return;
+    }
+    try {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const result = await submitSolution({
+        userId,
+        problemId: id,
+        code,
+        language: selectedLanguage?.name || selectedLanguage?.id,
+        violations,
+        mode: 'submit',
+        elapsedTime: elapsed
+      });
+      const allPassed = result.results.testCases.every(tc => tc.passed);
+      setCanSubmit(allPassed);
+      setTestResults({
+        passed: allPassed,
+        details: result.results.testCases,
+        metrics: result.results.metrics,
+        error: allPassed ? null : "Some test cases failed. Check details.",
+      });
+      if (allPassed) {
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 3000);
+        setShowWebcam(false);
+        setShowWarning(false);
+        // Stop webcam and screen recording
+        if (webcamRef.current && webcamRef.current.stream) {
+          webcamRef.current.stream.getTracks().forEach((track) => track.stop());
+        }
+        // Set submission summary and score for left panel
+        setSubmissionSummary({
+          testCases: result.results.testCases,
+          metrics: {
+            ...result.results.metrics,
+            timeTaken: result.results.timeTaken,
+            score: result.results.metrics.score,
+          },
+          violations,
+          startTime,
+        });
+        setFinalScore(result.results.metrics.score);
+        setFinalTime(result.results.timeTaken);
+        setCanSubmit(false); // Disable submit after success
+        setActiveTab("Submissions"); // Switch to Submissions tab
+      }
+    } catch (error) {
+      setTestResults({
+        passed: false,
+        error: error.message || "Failed to submit code. Please try again.",
+      });
+      setError("Failed to submit code. Please try again.");
+    }
+  };
+
+  // On Run Code, show only first test case result and enable submit if it passes
   const runCode = async () => {
     setTestResults(null);
     const userId = user?._id;
@@ -356,11 +430,10 @@ const ProblemSolve = () => {
         code,
         language: selectedLanguage?.name || selectedLanguage?.id,
         violations,
-        mode: 'run', // Only check the first test case
+        mode: 'run',
       });
-      // Only show the first test case result for run
       const firstTest = result.results.testCases[0];
-      setCanSubmit(false); // Only allow submit after all pass
+      setCanSubmit(firstTest.passed);
       setTestResults({
         passed: firstTest.passed,
         details: [firstTest],
@@ -372,63 +445,6 @@ const ProblemSolve = () => {
         passed: false,
         error: error.message || "Failed to run code. Please try again.",
       });
-    }
-  };
-
-  const handleSubmit = async () => {
-    setTestResults(null);
-    const userId = user?._id;
-    if (!userId) {
-      setTestResults({
-        passed: false,
-        error: "User not logged in. Please log in to submit code.",
-      });
-      setError("User not logged in. Please log in to submit code.");
-      return;
-    }
-    try {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000); // Calculate at submit
-      const result = await submitSolution({
-        userId,
-        problemId: id,
-        code,
-        language: selectedLanguage?.name || selectedLanguage?.id,
-        violations,
-        mode: 'submit', // Check all test cases
-        elapsedTime: elapsed // Use direct calculation
-      });
-      const allPassed = result.results.testCases.every(tc => tc.passed);
-      setCanSubmit(allPassed);
-      setTestResults({
-        passed: allPassed,
-        details: result.results.testCases,
-        metrics: result.results.metrics,
-        error: allPassed ? null : "Some test cases failed. Check details.",
-      });
-      if (allPassed) {
-        // Stop webcam and screen recording
-        if (webcamRef.current && webcamRef.current.stream) {
-          webcamRef.current.stream.getTracks().forEach((track) => track.stop());
-        }
-        navigate(`/problems/${id}/results`, {
-          state: {
-            testCases: result.results.testCases,
-            metrics: {
-              ...result.results.metrics,
-              timeTaken: result.results.timeTaken,
-              score: result.results.metrics.score,
-            },
-            violations,
-            startTime,
-          },
-        });
-      }
-    } catch (error) {
-      setTestResults({
-        passed: false,
-        error: error.message || "Failed to submit code. Please try again.",
-      });
-      setError("Failed to submit code. Please try again.");
     }
   };
 
@@ -446,6 +462,16 @@ const ProblemSolve = () => {
       navigate("/userDashboard/user-problems");
     }
   };
+
+  // Get window size for confetti (for left panel only)
+  const [windowSize, setWindowSize] = useState({ width: 400, height: 600 });
+  const leftPanelRef = useRef(null);
+  useEffect(() => {
+    if (leftPanelRef.current) {
+      const rect = leftPanelRef.current.getBoundingClientRect();
+      setWindowSize({ width: rect.width, height: rect.height });
+    }
+  }, [showCelebration]);
 
   if (isExamTerminated) {
     return (
@@ -505,182 +531,255 @@ const ProblemSolve = () => {
     );
   }
 
+  // Only show camera/warning while solving and before successful submit
+  const showProctoring = !showCelebration && (!testResults || !testResults.passed || (testResults.details && testResults.details.length === 1));
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
+            <div className="flex items-center gap-2">
+              <div className="flex justify-start">
+                <button
+                 onClick={handleBack}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
                 <ArrowLeft size={20} />
-                <span className="font-medium">Back to Problems</span>
-              </button>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Timer size={18} />
-                <span className="font-mono">{formatTime(elapsedTime)}</span>
+              <span className="font-medium ">Back to Problems</span>
+            </button>
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4 text-gray-600">
-                <div className="flex items-center gap-2">
-                  <Users size={18} />
-                  <span>
-                    {problem.participants !== undefined &&
-                    problem.participants !== null
-                      ? problem.participants.toLocaleString()
-                      : 0}{" "}
-                    Participants
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp size={18} />
-                  <span>{problem.successRate}% Success Rate</span>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <button
-                  onClick={runCode}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                >
-                  <Play size={18} />
-                  Run Code
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                  disabled={!testResults || !testResults.passed}
-                  style={{ opacity: !testResults || !testResults.passed ? 0.5 : 1 }}
-                >
-                  <Send size={18} />
-                  Submit Solution
-                </button>
-              </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Timer size={18} />
+              <span className="font-mono">{formatTime(elapsedTime)}</span>
             </div>
+            {showProctoring && (
+              <div className="flex items-center gap-2">
+                <button
+                  className="relative group"
+                  onClick={() => setShowWebcam(true)}
+                  aria-label="Show Camera"
+                >
+                  <Camera size={28} className="text-gray-700 hover:text-indigo-600 transition-colors" />
+                </button>
+                <span className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded shadow-sm">
+                  Your motion is being detected. Please avoid any disqualifying actions.
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-4 grid grid-cols-12 gap-6">
-        {/* Problem Description */}
-        <div className="col-span-4">
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6">
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                {problem.title}
-              </h1>
-              <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
-                <Code size={16} />
-                <span>Problem #{id}</span>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    problem.difficulty === "Easy"
-                      ? "bg-green-100 text-green-700"
-                      : problem.difficulty === "Medium"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {problem.difficulty}
-                </span>
-              </div>
-              <div className="prose max-w-none">
-                <p className="text-gray-600">{problem.description}</p>
-              </div>
+  
+      {/* Main Content: LeetCode-style layout */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Left Panel: Problem Description */}
+        <div className="w-1/2 bg-white border-r border-gray-200 flex flex-col">
+          {/* Problem Header */}
+          <div className="border-b border-gray-200 p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-xl font-semibold text-gray-800">{problem.title}</h1>
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                problem.difficulty === "Easy"
+                  ? "bg-green-100 text-green-800"
+                  : problem.difficulty === "Medium"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }`}>
+                {problem.difficulty}
+              </span>
             </div>
-
-            {/* Test Cases */}
-            <div className="border-t">
-              <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Example Test Cases
-                </h2>
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
+              <Code size={16} />
+              <span>Problem #{id}</span>
+            </div>
+          </div>
+  
+          {/* Tabbed Navigation */}
+          <div className="border-b border-gray-200">
+            <div className="flex">
+              <button
+                className={`px-4 py-2 text-sm font-medium ${activeTab === "Description" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
+                onClick={() => setActiveTab("Description")}
+              >
+                Description
+              </button>
+              <button
+                className={`px-4 py-2 text-sm font-medium ${activeTab === "Submissions" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
+                onClick={() => setActiveTab("Submissions")}
+              >
+                Submissions
+              </button>
+            </div>
+          </div>
+  
+          {/* Scrollable Content */}
+          <div ref={leftPanelRef} className="flex-1 overflow-auto p-4">
+            {activeTab === "Description" && (
+              <>
+                {/* Problem Description */}
+                <div className="prose max-w-none">
+                  <p className="text-gray-700 leading-relaxed mb-6">{problem.description}</p>
+                </div>
+                {/* Example Test Cases */}
                 <div className="space-y-4">
                   {problem.testCases.map((testCase, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">
-                            Input:
-                          </h3>
-                          <pre className="bg-white p-3 rounded text-sm">
-                            {testCase.input}
-                          </pre>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">
-                            Output:
-                          </h3>
-                          <pre className="bg-white p-3 rounded text-sm">
-                            {testCase.output}
-                          </pre>
+                    <div key={index} className="bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="p-4">
+                        <div className="font-semibold text-gray-800 mb-3">Example {index + 1}:</div>
+                        <div className="space-y-3">
+                          <div>
+                            <div className="text-sm font-medium text-gray-600 mb-1">Input:</div>
+                            <div className="bg-white border border-gray-200 rounded p-3 font-mono text-sm text-gray-800">
+                              {testCase.input}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-600 mb-1">Output:</div>
+                            <div className="bg-white border border-gray-200 rounded p-3 font-mono text-sm text-gray-800">
+                              {testCase.output}
+                            </div>
+                          </div>
+                          {testCase.explanation && (
+                            <div>
+                              <div className="text-sm font-medium text-gray-600 mb-1">Explanation:</div>
+                              <div className="text-sm text-gray-700">{testCase.explanation}</div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {testCase.explanation && (
-                        <div className="mt-3 text-sm text-gray-600">
-                          <strong>Explanation:</strong> {testCase.explanation}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </>
+            )}
+            {activeTab === "Submissions" && (
+              <>
+                {/* Celebration Confetti/Badge and Submission Summary */}
+                {showCelebration && (
+                  <>
+                    <Confetti
+                      width={windowSize.width}
+                      height={windowSize.height}
+                      numberOfPieces={120}
+                      recycle={false}
+                      colors={["#7C3AED", "#22D3EE", "#F59E42", "#10B981", "#F43F5E"]}
+                      style={{ position: "absolute", left: 0, top: 0, zIndex: 10 }}
+                    />
+                    <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
+                      <div className="bg-gradient-to-r from-purple-500 via-pink-400 to-yellow-400 text-white px-8 py-4 rounded-2xl shadow-xl text-2xl font-bold flex items-center gap-3 animate-bounce border-4 border-white">
+                        🎉 Congratulations! 🎉
+                      </div>
+                    </div>
+                  </>
+                )}
+                {submissionSummary ? (
+                  <div className="mb-8">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <CheckCircle className="text-green-600" size={28} />
+                        <span className="text-2xl font-bold text-green-800">All Test Cases Passed!</span>
+                      </div>
+                      <div className="flex gap-8 mt-4">
+                        <div className="flex flex-col items-center">
+                          <span className="text-lg font-semibold text-gray-700">Score</span>
+                          <span className="text-3xl font-bold text-green-700">{finalScore}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-lg font-semibold text-gray-700">Time</span>
+                          <span className="text-3xl font-bold text-blue-700">{finalTime}s</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Test Cases</h3>
+                      <ul className="space-y-2">
+                        {submissionSummary.testCases.map((tc, idx) => (
+                          <li key={idx} className="bg-white border border-gray-200 rounded p-3 flex flex-col">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-700">Case {idx + 1}:</span>
+                              {tc.passed ? (
+                                <span className="text-green-600 font-bold">Passed</span>
+                              ) : (
+                                <span className="text-red-600 font-bold">Failed</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
+                            <div className="text-xs text-gray-600">Output: <span className="font-mono">{tc.output}</span></div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-center mt-8">No submissions yet.</div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        {/* Code Editor */}
-        <div className="col-span-8">
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-8rem)]">
-            <div className="border-b px-4 py-3 flex items-center justify-between bg-gray-50">
+        {/* Right Panel: Code Editor and Results */}
+        <div className="w-1/2 flex flex-col bg-white">
+          {/* Code Editor Header */}
+          <div className="border-b border-gray-200 p-3 bg-gray-50">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <Languages size={18} className="text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Language:</span>
-                  {problem.languages && problem.languages.length > 0 && selectedLanguage ? (
-                    <select
-                      value={selectedLanguage.id}
-                      onChange={(e) => {
-                        const newLanguage = problem.languages.find(
-                          (lang) => lang.id === e.target.value
-                        );
-                        if (newLanguage) {
-                          handleLanguageChange(newLanguage);
-                        }
-                      }}
-                      className="min-w-[120px] text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-gray-400 transition-colors"
-                      style={{ appearance: 'menulist' }}
-                    >
-                      {problem.languages.map((lang) => (
-                        <option key={lang.id} value={lang.id}>
-                          {lang.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-red-600 text-sm">
-                      Loading languages...
-                    </span>
-                  )}
-                </div>
+                <span className="text-sm font-medium text-gray-700">Code</span>
+                {problem.languages && problem.languages.length > 0 && selectedLanguage ? (
+                  <select
+                    value={selectedLanguage.id}
+                    onChange={(e) => {
+                      const newLanguage = problem.languages.find(
+                        (lang) => lang.id === e.target.value
+                      );
+                      if (newLanguage) {
+                        handleLanguageChange(newLanguage);
+                      }
+                    }}
+                    className="text-sm border border-gray-300 rounded px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:border-gray-400 transition-colors"
+                  >
+                    {problem.languages.map((lang) => (
+                      <option key={lang.id} value={lang.id}>
+                        {lang.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-red-600 text-sm">Loading languages...</span>
+                )}
               </div>
-              {testResults?.passed && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle size={16} />
-                  <span className="text-sm font-medium">All tests passed</span>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={runCode}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                >
+                  <Play size={16} />
+                  Run
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                  disabled={!canSubmit || !!submissionSummary}
+                  style={{ opacity: !canSubmit || !!submissionSummary ? 0.5 : 1 }}
+                >
+                  <Send size={16} />
+                  Submit
+                </button>
+              </div>
             </div>
+          </div>
+  
+          {/* Code Editor */}
+          <div className="flex-1 min-h-0">
             {selectedLanguage && (
               <Editor
-                height="calc(100% - 41px)"
+                height="100%"
                 defaultLanguage={selectedLanguage.id}
                 language={selectedLanguage.id}
-                theme="vs-dark"
+                theme="vs-light"
                 value={code}
                 onChange={handleCodeChange}
                 options={{
@@ -689,7 +788,7 @@ const ProblemSolve = () => {
                   lineNumbers: "on",
                   readOnly: false,
                   wordWrap: "on",
-                  padding: { top: 20 },
+                  padding: { top: 16, bottom: 16 },
                   suggestOnTriggerCharacters: false,
                   quickSuggestions: false,
                   parameterHints: { enabled: false },
@@ -698,33 +797,115 @@ const ProblemSolve = () => {
                   acceptSuggestionOnEnter: "off",
                   tabCompletion: "off",
                   wordBasedSuggestions: false,
+                  scrollBeyondLastLine: false,
                 }}
               />
             )}
           </div>
+  
+          {/* Test Results Panel */}
+          {testResults && (
+            <div className="border-t border-gray-200 bg-gray-50">
+              {/* Test Results Header */}
+              <div className="flex items-center justify-between p-3 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Testcase</span>
+                  <span className="text-sm text-gray-500">Test Result</span>
+                </div>
+                <button className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+  
+              {/* Test Results Content */}
+              <div className="p-4 max-h-48 overflow-auto">
+                {/* Test Case Tabs */}
+                <div className="flex gap-2 mb-4">
+                  {testResults.details.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`px-3 py-1 text-sm rounded ${
+                        index === 0
+                          ? "bg-blue-100 text-blue-700 border border-blue-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      Case {index + 1}
+                    </button>
+                  ))}
+                </div>
+  
+                {/* Result Status */}
+                <div className={`p-3 rounded-lg border ${
+                  testResults.passed
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {testResults.passed ? (
+                      <>
+                        <CheckCircle size={16} className="text-green-600" />
+                        <span className="font-medium">Accepted</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={16} className="text-red-600" />
+                        <span className="font-medium">Wrong Answer</span>
+                      </>
+                    )}
+                  </div>
+  
+                  {/* Test Case Details */}
+                  <div className="space-y-3">
+                    {testResults.details.map((tc, idx) => (
+                      <div key={idx} className="text-sm">
+                        <div className="font-mono bg-white p-2 rounded border">
+                          <div className="text-gray-600">Input:</div>
+                          <div className="text-gray-800">{tc.input}</div>
+                        </div>
+                        <div className="font-mono bg-white p-2 rounded border mt-1">
+                          <div className="text-gray-600">Output:</div>
+                          <div className="text-gray-800">{tc.output}</div>
+                        </div>
+                        <div className={`mt-1 px-2 py-1 rounded text-xs ${
+                          tc.passed ? "text-green-700" : "text-red-700"
+                        }`}>
+                          {tc.passed ? "✓ Passed" : "✗ Failed"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Webcam */}
-      <div
-        className={`fixed ${
-          isCameraMinimized ? "bottom-4 right-4 w-48" : "bottom-4 right-4 w-64"
-        } transition-all duration-300`}
-      >
-        <div className="relative rounded-xl overflow-hidden shadow-lg">
-          <Webcam ref={webcamRef} mirrored className="w-full" />
-          <button
-            onClick={() => setIsCameraMinimized(!isCameraMinimized)}
-            className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-colors"
-          >
-            <Camera size={16} />
-          </button>
+  
+      {/* Webcam Modal */}
+      {showWebcam && showProctoring && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 relative w-80">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
+              onClick={() => setShowWebcam(false)}
+              aria-label="Close Camera"
+            >
+              ✕
+            </button>
+            <Webcam ref={webcamRef} mirrored className="w-full rounded-xl" />
+            <div className="mt-2 text-xs text-gray-600 text-center">
+              Camera is active for proctoring
+            </div>
+          </div>
         </div>
-      </div>
-
+      )}
+  
       {/* Notifications */}
       <AnimatePresence>
-        {showWarning && (
+        {showWarning && showProctoring && (
           <motion.div
             className="fixed top-4 right-4 bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-lg z-50"
             initial={{ opacity: 0, y: -20 }}
@@ -740,55 +921,7 @@ const ProblemSolve = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Test Results Modal */}
-      <AnimatePresence>
-        {testResults && (
-          <motion.div
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 ${
-              testResults.passed
-                ? "bg-green-100 border-green-200 text-green-700"
-                : "bg-red-100 border-red-200 text-red-700"
-            } px-6 py-4 rounded-xl shadow-lg z-50 border`}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                {testResults.passed ? (
-                  <>
-                    <CheckCircle size={16} />
-                    <p className="font-medium">
-                      All test cases passed! You can now submit your solution.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle size={16} />
-                    <p className="font-medium">{testResults.error}</p>
-                  </>
-                )}
-              </div>
-              {testResults.details && (
-                <div className="mt-2">
-                  <div className="font-semibold mb-1">Test Case Results:</div>
-                  <ul className="text-xs">
-                    {testResults.details.map((tc, idx) => (
-                      <li key={idx}>
-                        <span className={tc.passed ? "text-green-600" : "text-red-600"}>
-                          [{tc.passed ? "PASS" : "FAIL"}]
-                        </span>{" "}
-                        <span>Input: {tc.input} | Output: {tc.output}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  
       {/* Confirmation Modal for navigation */}
       {showNavConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
