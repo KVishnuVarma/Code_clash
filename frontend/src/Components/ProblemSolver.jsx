@@ -728,7 +728,7 @@ const ProblemSolve = () => {
                 </div>
                 {/* Example Test Cases */}
                 <div className="space-y-4">
-                  {problem.testCases.map((testCase, index) => (
+                  {Array.isArray(problem?.testCases) && problem.testCases.map((testCase, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg border border-gray-200">
                       <div className="p-4">
                         <div className="font-semibold text-gray-800 mb-3">Example {index + 1}:</div>
@@ -837,7 +837,7 @@ const ProblemSolve = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium text-gray-700">Code</span>
-                {problem.languages && problem.languages.length > 0 && selectedLanguage ? (
+                {problem.languages && Array.isArray(problem.languages) && problem.languages.length > 0 && selectedLanguage ? (
                   <select
                     value={selectedLanguage.id}
                     onChange={(e) => {
@@ -940,7 +940,7 @@ const ProblemSolve = () => {
               <div className="p-4 max-h-48 overflow-auto">
                 {/* Test Case Tabs */}
                 <div className="flex gap-2 mb-4">
-                  {testResults.details.map((_, index) => (
+                  {Array.isArray(testResults?.details) && testResults.details.map((_, index) => (
                     <button
                       key={index}
                       className={`px-3 py-1 text-sm rounded ${
@@ -976,7 +976,7 @@ const ProblemSolve = () => {
   
                   {/* Test Case Details */}
                   <div className="space-y-3">
-                    {testResults.details.map((tc, idx) => (
+                    {Array.isArray(testResults?.details) && testResults.details.map((tc, idx) => (
                       <div key={idx} className="text-sm">
                         <div className="font-mono bg-white p-2 rounded border">
                           <div className="text-gray-600">Input:</div>
