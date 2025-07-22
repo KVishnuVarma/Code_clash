@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     // Fetch user details from backend
     const fetchUser = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/auth/user", {
+            const res = await fetch("https://code-clash-s9vq.onrender.com/api/auth/user", {
                 headers: { "x-auth-token": token },
             });
 
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     // Login function
     const login = async (email, password) => {
         try {
-            const res = await fetch("http://localhost:5000/api/auth/login", {
+            const res = await fetch("https://code-clash-s9vq.onrender.com/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),

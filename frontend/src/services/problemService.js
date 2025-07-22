@@ -1,6 +1,6 @@
 
 export async function submitSolution({ userId, problemId, code, language, violations, mode, elapsedTime }) {
-  const response = await fetch('http://localhost:5000/api/submissions/submit', {
+  const response = await fetch('https://code-clash-s9vq.onrender.com/api/submissions/submit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, problemId, code, language, violations, mode, elapsedTime })
@@ -13,7 +13,7 @@ export async function submitSolution({ userId, problemId, code, language, violat
 }
 
 export async function getUserSubmissions(userId) {
-  const response = await fetch(`http://localhost:5000/api/submissions/history?userId=${userId}`);
+  const response = await fetch(`https://code-clash-s9vq.onrender.com/api/submissions/history?userId=${userId}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch submissions');
@@ -23,7 +23,7 @@ export async function getUserSubmissions(userId) {
 }
 
 export async function getUserProblemSubmissions(userId, problemId) {
-  const response = await fetch(`http://localhost:5000/api/submissions/history?userId=${userId}&problemId=${problemId}`);
+  const response = await fetch(`https://code-clash-s9vq.onrender.com/api/submissions/history?userId=${userId}&problemId=${problemId}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch submissions');
@@ -33,7 +33,7 @@ export async function getUserProblemSubmissions(userId, problemId) {
 }
 
 export async function getProblemParticipants(problemId) {
-  const response = await fetch(`http://localhost:5000/api/submissions/participants/${problemId}`);
+  const response = await fetch(`https://code-clash-s9vq.onrender.com/api/submissions/participants/${problemId}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch participants');

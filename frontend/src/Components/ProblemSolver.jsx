@@ -119,7 +119,7 @@ const ProblemSolve = () => {
         let data;
         try {
           const response = await fetch(
-            `http://localhost:5000/api/problems/${id}`
+            `https://code-clash-s9vq.onrender.com/api/problems/${id}`
           );
           if (!response.ok) {
             throw new Error("API not available");

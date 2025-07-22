@@ -17,7 +17,7 @@ const Register = () => {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch("https://code-clash-s9vq.onrender.com/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -47,7 +47,7 @@ const Register = () => {
 
   const handleGoogleSignup = () => {
     setLoading(true);
-    window.location.href = "http://localhost:5000/api/auth/google";
+    window.location.href = "https://code-clash-s9vq.onrender.com/api/auth/google";
   };
 
   return (
