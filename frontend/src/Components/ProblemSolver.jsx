@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import {motion, AnimatePresence } from "framer-motion";
 import Webcam from "react-webcam";
 import Editor from "@monaco-editor/react";
 import {
@@ -178,6 +179,7 @@ const ProblemSolve = () => {
       setSelectedLanguage(defaultLanguage);
       setCode(defaultLanguage.template || "");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problem]);
 
   useEffect(() => {
@@ -345,6 +347,7 @@ const ProblemSolve = () => {
         clearInterval(mobileCheckInterval.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, violations]);
 
   // On successful submit, show celebration and hide camera/warning
@@ -481,7 +484,6 @@ const ProblemSolve = () => {
         setCode(selectedLanguage.template || "");
       }
     }
-    // eslint-disable-next-line
   }, [user, selectedLanguage, id]);
 
   // Refresh button handler: clear code and localStorage, reset to template

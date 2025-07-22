@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Contest = require("../models/contest");
+const Contest = require("../models/Contest");
 
 // Create a new contest
 router.post("/", async (req, res) => {

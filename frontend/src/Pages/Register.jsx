@@ -26,6 +26,7 @@ const Register = () => {
       let data;
       try {
         data = await res.json();
+      // eslint-disable-next-line no-unused-vars
       } catch (jsonError) {
         throw new Error("Invalid response from server");
       }

@@ -1,6 +1,4 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Users, Trophy, List, BarChart, LogOut } from "lucide-react";
+import React from "react";
 import { Chart as ChartJS, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 

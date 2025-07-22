@@ -21,7 +21,7 @@ import useAuth from "./hooks/useAuth";
 
 // Importing the new Problem pages
 import ProblemView from "./Components/ProblemView";
-import ProblemSolver from "./components/ProblemSolver";
+import ProblemSolver from "./Components/ProblemSolver";
 import ResultsPage from "./Components/ResultsPage";
 export default function App() {
   const { user } = useAuth();

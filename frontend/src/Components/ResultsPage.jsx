@@ -1,5 +1,7 @@
+/* eslint-disable no-undef */
 import React from 'react';
 import { useEffect, useRef, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import ConfettiGenerator from "confetti-js";
@@ -93,9 +95,6 @@ const setupViolationListeners = (callback) => {
 };
 
 // Helper function to calculate score
-const calculateScore = (testCasesPassed) => {
-  return testCasesPassed * 10; // 10 points per test case
-};
 
 const ResultsPage = () => {
   const navigate = useNavigate();
@@ -116,6 +115,7 @@ const ResultsPage = () => {
   // Get data from location state with proper type checking
   const state = location.state || {};
   const testCases = Array.isArray(state.testCases) ? state.testCases : [];
+  // eslint-disable-next-line no-unused-vars
   const startTime = state.startTime ? new Date(state.startTime) : new Date();
   const timeTaken = state.metrics?.timeTaken || state.timeTaken || 0;
   const score = state.metrics?.score || 0;
@@ -197,7 +197,7 @@ const ResultsPage = () => {
   }, []);
 
   // Calculate time spent using strict formatting (exact time)
-  const timeSpent = formatDistanceStrict(startTime, new Date(), { addSuffix: false });
+
   const passedTests = testCases.filter((tc) => tc.passed).length;
   const totalViolations = 
     violationsState.copyPaste + 
@@ -302,6 +302,7 @@ const ResultsPage = () => {
         </div>
 
         {/* For testing - only visible in development */}
+        // eslint-disable-next-line no-undef, no-undef
         {process.env.NODE_ENV === "development" && (
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Test Violations (Dev Only)</h4>

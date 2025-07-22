@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -19,6 +20,7 @@ export const AuthProvider = ({ children }) => {
         } else {
             setLoading(false);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     // Fetch user details from backend
@@ -94,4 +96,5 @@ export const AuthProvider = ({ children }) => {
 };
 
 // Custom hook for accessing AuthContext
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

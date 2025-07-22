@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import Sidebar from "./sidebar";
 import { useAuth } from "../context/AuthContext";
+// eslint-disable-next-line no-unused-vars
 import { submitSolution, getUserSubmissions } from "../services/problemService";
 
 const Problems = () => {
@@ -46,6 +48,7 @@ const Problems = () => {
       try {
         const res = await getUserSubmissions(user._id);
         setSubmissions(res);
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
         // ignore
       }

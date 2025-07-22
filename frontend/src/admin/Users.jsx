@@ -9,6 +9,7 @@ const Users = () => {
 
     useEffect(() => {
         fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchUsers = async () => {
@@ -38,8 +39,9 @@ const Users = () => {
 
                 const filteredUsers = data.filter(user => user.role !== "admin");
                 setUsers(filteredUsers);
+            // eslint-disable-next-line no-unused-vars
             } catch (jsonError) {
-                throw new Error("Invalid JSON response from server");
+                setError("Invalid JSON response from server");
             }
         } catch (err) {
             setError(err.message);
@@ -79,6 +81,7 @@ const Users = () => {
                         user._id === userId ? { ...user, isSuspended: !isSuspended } : user
                     )
                 );
+            // eslint-disable-next-line no-unused-vars
             } catch (jsonError) {
                 throw new Error("Invalid JSON response from server");
             }
