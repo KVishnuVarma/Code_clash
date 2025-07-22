@@ -18,27 +18,7 @@ const app = express();
 })();
 
 app.use(express.json());
-const allowedOrigins = [
-  'https://codeclashv.vercel.app',
-  'http://localhost:3000',
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-  allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 
 app.use(session({
