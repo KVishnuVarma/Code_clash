@@ -92,6 +92,16 @@ const submitCode = async (req, res) => {
       });
       await submission.save();
 
+      // Update attemptedUsers and solvedUsers arrays
+      await Problem.findByIdAndUpdate(problemId, {
+        $addToSet: { attemptedUsers: userId },
+      });
+      if (passedTests === problem.testCases.length) {
+        await Problem.findByIdAndUpdate(problemId, {
+          $addToSet: { solvedUsers: userId },
+        });
+      }
+
       // Only update stats and points if user hasn't solved before and this is an accepted solution
       if (!alreadySolved && passedTests === problem.testCases.length) {
         await Problem.findByIdAndUpdate(problemId, {
@@ -166,6 +176,8 @@ const submitCode = async (req, res) => {
     });
   } catch (error) {
     console.error("Submission error:", error);
+    console.error("Submission error stack:", error.stack);
+    console.error("Submission request body:", req.body);
     res.status(500).json({ error: error.message });
   }
 };

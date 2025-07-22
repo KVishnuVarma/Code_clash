@@ -46,10 +46,9 @@ const ProblemDetails = () => {
         }
     };
 
-    const calculateSuccessRate = (problem) => {
-        if (!problem.totalParticipants) return 0;
-        return Math.round((problem.successfulSubmissions / problem.totalParticipants) * 100);
-    };
+    // Remove old calculateSuccessRate function and use problem.successRate directly
+    // const successRate = calculateSuccessRate(problem);
+    const successRate = typeof problem.successRate === 'number' ? problem.successRate : 0;
 
     if (loading) {
         return (
@@ -91,7 +90,7 @@ const ProblemDetails = () => {
         );
     }
 
-    const successRate = calculateSuccessRate(problem);
+    // const successRate = calculateSuccessRate(problem);
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">

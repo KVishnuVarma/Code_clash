@@ -814,7 +814,8 @@ const ProblemSolve = () => {
                                   )}
                                 </div>
                                 <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
-                                <div className="text-xs text-gray-600">Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
+                                <div className="text-xs text-gray-600">Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
+                                <div className="text-xs text-gray-600">Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
                               </li>
                             ))}
                           </ul>
