@@ -18,10 +18,12 @@ import {
   Languages,
   Timer,
   XCircle,
+  HelpCircle,
 } from "lucide-react";
 import { submitSolution, getUserProblemSubmissions, getProblemParticipants } from "../services/problemService";
 import { useAuth } from "../context/AuthContext";
 import Confetti from "react-confetti";
+import Aihelp from "./Aihelp";
 
 const ProblemSolve = () => {
   const { id } = useParams();
@@ -64,6 +66,8 @@ const ProblemSolve = () => {
   const [activeTab, setActiveTab] = useState("Description");
   // Add state for current test case tab
   const [activeTestCase, setActiveTestCase] = useState(0);
+  const [showAiHelp, setShowAiHelp] = useState(false);
+  const [aiHelpSubmissionIdx, setAiHelpSubmissionIdx] = useState(null);
 
   // Remove mockRunCode and related logic
 
@@ -777,7 +781,7 @@ const ProblemSolve = () => {
   
           {/* Tabbed Navigation */}
           <div className="border-b border-gray-200">
-            <div className="flex">
+            <div className="flex items-center">
               <button
                 className={`px-4 py-2 text-sm font-medium ${activeTab === "Description" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setActiveTab("Description")}
@@ -790,8 +794,26 @@ const ProblemSolve = () => {
               >
                 Submissions
               </button>
+              {/* AI Help Button in the tab bar */}
+              <button
+                onClick={() => { setShowAiHelp(true); setAiHelpSubmissionIdx(null); }}
+                className="ml-4 flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                aria-label="AI Help"
+              >
+                <HelpCircle size={16} />
+                AI Help
+              </button>
             </div>
           </div>
+          {/* AI Help Modal (global, not per submission) */}
+          <Aihelp 
+            open={showAiHelp} 
+            onClose={() => { setShowAiHelp(false); setAiHelpSubmissionIdx(null); }} 
+            code={code}
+            language={selectedLanguage?.name || selectedLanguage?.id}
+            problemId={id}
+            userId={user?._id}
+          />
 
           {/* Scrollable Content */}
           <div ref={leftPanelRef} className="flex-1 overflow-auto p-4">
@@ -898,48 +920,93 @@ const ProblemSolve = () => {
                 {allSubmissions.length > 0 ? (
                   <div className="mb-8">
                     {allSubmissions.map((sub, idx) => (
-                      <div key={sub._id || idx} className="bg-green-50 border border-green-200 rounded-xl p-6 mb-4">
-                        <div className="flex items-center gap-3 mb-2">
-                          <CheckCircle className={sub.status === "Accepted" ? "text-green-600" : "text-red-600"} size={28} />
-                          <span className={`text-2xl font-bold ${sub.status === "Accepted" ? "text-green-800" : "text-red-800"}`}>{sub.status === "Accepted" ? "All Test Cases Passed!" : "Wrong Answer"}</span>
-                        </div>
-                        <div className="flex gap-8 mt-4">
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg font-semibold text-gray-700">Score</span>
-                            <span className="text-3xl font-bold text-green-700">{sub.score}</span>
+                      <div key={sub._id || idx} className="relative flex items-start mb-4">
+                        {/* Submission Card */}
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-6 w-full">
+                          <div className="flex items-center gap-3 mb-2">
+                            <CheckCircle className={sub.status === "Accepted" ? "text-green-600" : "text-red-600"} size={28} />
+                            <span className={`text-2xl font-bold ${sub.status === "Accepted" ? "text-green-800" : "text-red-800"}`}>{sub.status === "Accepted" ? "All Test Cases Passed!" : "Wrong Answer"}</span>
                           </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg font-semibold text-gray-700">Time</span>
-                            <span className="text-3xl font-bold text-blue-700">{sub.timeTaken}s</span>
+                          <div className="flex gap-8 mt-4">
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-semibold text-gray-700">Score</span>
+                              <span className="text-3xl font-bold text-green-700">{sub.score}</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-semibold text-gray-700">Time</span>
+                              <span className="text-3xl font-bold text-blue-700">{sub.timeTaken}s</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-semibold text-gray-700">Submitted</span>
+                              <span className="text-md text-gray-600">{new Date(sub.submittedAt).toLocaleString()}</span>
+                            </div>
                           </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg font-semibold text-gray-700">Submitted</span>
-                            <span className="text-md text-gray-600">{new Date(sub.submittedAt).toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="mb-4 mt-4">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-2">Test Cases</h3>
-                          <ul className="space-y-2">
-                            {sub.testResults && sub.testResults.map((tc, tcidx) => (
-                              <li key={tcidx} className="bg-white border border-gray-200 rounded p-3 flex flex-col">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold text-gray-700">Case {tcidx + 1}:</span>
-                                  {tc.passed ? (
-                                    <span className="text-green-600 font-bold">Passed</span>
-                                  ) : (
-                                    <span className="text-red-600 font-bold">Failed</span>
+                          <div className="mb-4 mt-4">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Test Cases</h3>
+                            <ul className="space-y-2">
+                              {sub.testResults && sub.testResults.map((tc, tcidx) => (
+                                <li key={tcidx} className="bg-white border border-gray-200 rounded p-3 flex flex-col">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-semibold text-gray-700">Case {tcidx + 1}:</span>
+                                    {tc.passed ? (
+                                      <span className="text-green-600 font-bold">Passed</span>
+                                    ) : (
+                                      <span className="text-red-600 font-bold">Failed</span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
+                                  <div className="text-xs text-gray-600">Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
+                                  <div className="text-xs text-gray-600">Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
+                                  {tc.error && (
+                                    <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{tc.error}</span></div>
                                   )}
-                                </div>
-                                <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
-                                <div className="text-xs text-gray-600">Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
-                                <div className="text-xs text-gray-600">Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
-                                {tc.error && (
-                                  <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{tc.error}</span></div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
+                        {showAiHelp && aiHelpSubmissionIdx === idx && (
+                          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative">
+                              <button
+                                className="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xl font-bold"
+                                onClick={() => { setShowAiHelp(false); setAiHelpSubmissionIdx(null); }}
+                                aria-label="Close AI Help"
+                              >
+                                ×
+                              </button>
+                              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-blue-700">
+                                <HelpCircle size={28} /> AI Help
+                              </h2>
+                              <div className="space-y-4 text-gray-700">
+                                <div>
+                                  <h3 className="font-semibold text-lg mb-1">Code Completion Tips</h3>
+                                  <ul className="list-disc list-inside text-sm space-y-1">
+                                    <li>Break down the problem into smaller steps before coding.</li>
+                                    <li>Write pseudocode or comments to outline your logic.</li>
+                                    <li>Use the provided function signature and input/output format.</li>
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-lg mb-1">Error Fixing Advice</h3>
+                                  <ul className="list-disc list-inside text-sm space-y-1">
+                                    <li>Check for syntax errors and missing brackets or semicolons.</li>
+                                    <li>Review variable names and types for consistency.</li>
+                                    <li>Use print/debug statements to trace your code execution.</li>
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-lg mb-1">Code Review Checklist</h3>
+                                  <ul className="list-disc list-inside text-sm space-y-1">
+                                    <li>Did you handle all possible edge cases?</li>
+                                    <li>Is your code readable and well-commented?</li>
+                                    <li>Did you test your solution with different inputs?</li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -951,7 +1018,7 @@ const ProblemSolve = () => {
           </div>
         </div>
         {/* Right Panel: Code Editor and Results */}
-        <div className="w-1/2 flex flex-col bg-white">
+        <div className="w-1/2 flex flex-col bg-white relative">
           {/* Code Editor Header */}
           <div className="border-b border-gray-200 p-3 bg-gray-50">
             <div className="flex items-center justify-between">
