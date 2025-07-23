@@ -1105,14 +1105,6 @@ const ProblemSolve = () => {
             {participant.status === 'Accepted' && index < 3 && (
               <div className="mt-3 pt-3 border-t border-slate-600">
                 <div className="flex items-center gap-2">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-slate-400' : 'bg-orange-400'
-                  }`}>
-                    {index + 1}
-                  </div>
-                  <span className="text-sm text-slate-400">
-                    {index === 0 ? 'Top Performer' : index === 1 ? 'Second Place' : 'Third Place'}
-                  </span>
                 </div>
               </div>
             )}
