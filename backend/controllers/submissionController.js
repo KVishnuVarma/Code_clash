@@ -291,6 +291,7 @@ const getProblemParticipants = async (req, res) => {
     // Map userId to best submission (highest score, then fastest time)
     const userMap = {};
     for (const sub of submissions) {
+      if (!sub.userId) continue; // Skip if user is missing
       const uid = String(sub.userId._id);
       if (!userMap[uid]) {
         userMap[uid] = { user: sub.userId, submission: sub };
