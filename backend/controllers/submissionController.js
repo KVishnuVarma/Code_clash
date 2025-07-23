@@ -28,9 +28,45 @@ const submitCode = async (req, res) => {
       if (language.toLowerCase() === 'python' && /^s\s*=\s*/.test(inputToUse)) {
         inputToUse = inputToUse.replace(/^s\s*=\s*/, '').trim();
       }
-      const result = await executeCode(language, code, inputToUse);
-      if (!result || result.stdout === null) {
-        return res.status(500).json({ error: "Code execution failed" });
+      let result;
+      try {
+        result = await executeCode(language, code, inputToUse);
+      } catch (execError) {
+        // If code execution throws, treat as code error, not server error
+        testResults.push({
+          input: testCase.input,
+          expectedOutput: testCase.output,
+          actualOutput: null,
+          passed: false,
+          error: execError.message || 'Code execution failed',
+          stderr: execError.message || 'Unknown error',
+          executionTime: 0,
+        });
+        continue;
+      }
+      if (!result || (result.stdout === null && !result.stderr)) {
+        testResults.push({
+          input: testCase.input,
+          expectedOutput: testCase.output,
+          actualOutput: null,
+          passed: false,
+          error: 'Code execution failed',
+          stderr: result ? result.stderr : 'Unknown error',
+          executionTime: result && result.executionTime ? result.executionTime : 0,
+        });
+        continue;
+      }
+      if (result.stderr) {
+        testResults.push({
+          input: testCase.input,
+          expectedOutput: testCase.output,
+          actualOutput: result.stdout,
+          passed: false,
+          error: result.stderr,
+          stderr: result.stderr,
+          executionTime: result.executionTime || 0,
+        });
+        continue;
       }
       const passed = result.stdout.trim() === testCase.output.trim();
       if (passed) passedTests++;
@@ -161,6 +197,8 @@ const submitCode = async (req, res) => {
           input: test.input,
           output: test.actualOutput,
           passed: test.passed,
+          error: test.error || null,
+          stderr: test.stderr || null,
         })),
         metrics: {
           totalTests: testCasesToRun.length,
@@ -178,6 +216,7 @@ const submitCode = async (req, res) => {
     console.error("Submission error:", error);
     console.error("Submission error stack:", error.stack);
     console.error("Submission request body:", req.body);
+    // Only return 500 for true server errors
     res.status(500).json({ error: error.message });
   }
 };

@@ -238,7 +238,7 @@ const Problems = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <BarChart2 size={16} className="text-blue-400" />
-                            <span className="text-gray-600">65%</span>
+                            <span className="text-gray-600">{typeof problem.successRate === 'number' ? `${problem.successRate}%` : '0%'}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">

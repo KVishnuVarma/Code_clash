@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Languages,
   Timer,
+  XCircle,
 } from "lucide-react";
 import { submitSolution, getUserProblemSubmissions, getProblemParticipants } from "../services/problemService";
 import { useAuth } from "../context/AuthContext";
@@ -61,6 +62,8 @@ const ProblemSolve = () => {
   const [submissionSummary, setSubmissionSummary] = useState(null);
   // Add tab state for Description/Submissions
   const [activeTab, setActiveTab] = useState("Description");
+  // Add state for current test case tab
+  const [activeTestCase, setActiveTestCase] = useState(0);
 
   // Remove mockRunCode and related logic
 
@@ -233,6 +236,7 @@ const ProblemSolve = () => {
     setCode(language.template || "");
     setTestResults(null);
     setCanSubmit(false);
+    setActiveTestCase(0);
   };
 
   const notifyAdmin = (violation) => {
@@ -350,18 +354,22 @@ const ProblemSolve = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, violations]);
 
-  // On successful submit, show celebration and hide camera/warning
+  // Fixed handleSubmit with proper error handling
   const handleSubmit = async () => {
     setTestResults(null);
+    setError(null); // Clear any previous errors
     const userId = user?._id;
+    
     if (!userId) {
       setTestResults({
         passed: false,
         error: "User not logged in. Please log in to submit code.",
+        isCompileError: false,
+        details: []
       });
-      setError("User not logged in. Please log in to submit code.");
       return;
     }
+
     try {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const result = await submitSolution({
@@ -373,67 +381,97 @@ const ProblemSolve = () => {
         mode: 'submit',
         elapsedTime: elapsed
       });
-      const allPassed = result.results.testCases.every(tc => tc.passed);
-      setCanSubmit(allPassed);
-      setTestResults({
-        passed: allPassed,
-        details: result.results.testCases,
-        metrics: result.results.metrics,
-        error: allPassed ? null : "Some test cases failed. Check details.",
-      });
-      if (allPassed) {
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 3000);
-        setShowWebcam(false);
-        setShowWarning(false);
-        // Stop webcam and screen recording
-        if (webcamRef.current && webcamRef.current.stream) {
-          webcamRef.current.stream.getTracks().forEach((track) => track.stop());
-        }
-        // Set submission summary and score for left panel
-        setSubmissionSummary({
-          testCases: result.results.testCases,
-          metrics: {
-            ...result.results.metrics,
-            timeTaken: result.results.timeTaken,
-            score: result.results.metrics.score,
-          },
-          violations,
-          startTime,
+
+      if (result && result.results) {
+        const allPassed = result.results.testCases.every(tc => tc.passed);
+        setCanSubmit(allPassed);
+        setTestResults({
+          passed: allPassed,
+          details: result.results.testCases,
+          metrics: result.results.metrics,
+          error: allPassed ? null : "Some test cases failed. Check details.",
+          isCompileError: false
         });
-        setActiveTab("Submissions"); // Switch to Submissions tab
-        // Stop the timer and freeze elapsedTime
-        if (timerInterval.current) {
-          clearInterval(timerInterval.current);
-          timerInterval.current = null;
+        setActiveTestCase(0); // Reset to first test case
+        
+        if (allPassed) {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 3000);
+          setShowWebcam(false);
+          setShowWarning(false);
+          if (webcamRef.current && webcamRef.current.stream) {
+            webcamRef.current.stream.getTracks().forEach((track) => track.stop());
+          }
+          setSubmissionSummary({
+            testCases: result.results.testCases,
+            metrics: {
+              ...result.results.metrics,
+              timeTaken: result.results.timeTaken,
+              score: result.results.metrics.score,
+            },
+            violations,
+            startTime,
+          });
+          setActiveTab("Submissions");
+          if (timerInterval.current) {
+            clearInterval(timerInterval.current);
+            timerInterval.current = null;
+          }
+          setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+          if (user?._id && id) {
+            getUserProblemSubmissions(user._id, id).then(setAllSubmissions);
+          }
         }
-        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
-        // Fetch updated submissions
-        if (user?._id && id) {
-          getUserProblemSubmissions(user._id, id).then(setAllSubmissions);
-        }
+      } else {
+        // Handle case where result structure is unexpected
+        setTestResults({
+          passed: false,
+          error: "Unexpected response format. Please try again.",
+          isCompileError: true,
+          details: []
+        });
       }
     } catch (error) {
+      console.error("Submit error:", error);
+      
+      // Check if it's a compile error based on error message or structure
+      const isCompileError = error.message && (
+        error.message.includes("compile") || 
+        error.message.includes("syntax") ||
+        error.message.includes("Compile Error") ||
+        error.message.toLowerCase().includes("illegal start")
+      );
+      
       setTestResults({
         passed: false,
         error: error.message || "Failed to submit code. Please try again.",
+        isCompileError: isCompileError,
+        details: [],
+        compileErrorDetails: isCompileError ? {
+          line: extractLineNumber(error.message),
+          message: error.message
+        } : null
       });
-      setError("Failed to submit code. Please try again.");
+      setActiveTestCase(0);
     }
   };
 
-  // On Run Code, show only first test case result and enable submit if it passes
+  // Fixed runCode with proper error handling
   const runCode = async () => {
     setTestResults(null);
+    setError(null); // Clear any previous errors
     const userId = user?._id;
+    
     if (!userId) {
       setTestResults({
         passed: false,
         error: "User not logged in. Please log in to run code.",
+        isCompileError: false,
+        details: []
       });
-      setError("User not logged in. Please log in to run code.");
       return;
     }
+
     try {
       const result = await submitSolution({
         userId,
@@ -443,20 +481,56 @@ const ProblemSolve = () => {
         violations,
         mode: 'run',
       });
-      const firstTest = result.results.testCases[0];
-      setCanSubmit(firstTest.passed);
-      setTestResults({
-        passed: firstTest.passed,
-        details: [firstTest],
-        metrics: result.results.metrics,
-        error: firstTest.passed ? null : "First test case failed. Check details.",
-      });
+
+      if (result && result.results && result.results.testCases && result.results.testCases.length > 0) {
+        const firstTest = result.results.testCases[0];
+        setCanSubmit(firstTest.passed);
+        setTestResults({
+          passed: firstTest.passed,
+          details: [firstTest],
+          metrics: result.results.metrics,
+          error: firstTest.passed ? null : "First test case failed. Check details.",
+          isCompileError: false
+        });
+        setActiveTestCase(0);
+      } else {
+        setTestResults({
+          passed: false,
+          error: "No test results received. Please try again.",
+          isCompileError: true,
+          details: []
+        });
+      }
     } catch (error) {
+      console.error("Run code error:", error);
+      
+      // Check if it's a compile error
+      const isCompileError = error.message && (
+        error.message.includes("compile") || 
+        error.message.includes("syntax") ||
+        error.message.includes("Compile Error") ||
+        error.message.toLowerCase().includes("illegal start")
+      );
+
       setTestResults({
         passed: false,
         error: error.message || "Failed to run code. Please try again.",
+        isCompileError: isCompileError,
+        details: [],
+        compileErrorDetails: isCompileError ? {
+          line: extractLineNumber(error.message),
+          message: error.message
+        } : null
       });
+      setActiveTestCase(0);
     }
+  };
+
+  // Helper function to extract line number from error message
+  const extractLineNumber = (errorMessage) => {
+    if (!errorMessage) return null;
+    const lineMatch = errorMessage.match(/Line (\d+):/i);
+    return lineMatch ? parseInt(lineMatch[1]) : null;
   };
 
   // Mark as dirty if code changes
@@ -614,10 +688,11 @@ const ProblemSolve = () => {
                 <button
                  onClick={handleBack}
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  aria-label="Back to Problems"
                 >
                 <ArrowLeft size={20} />
-              <span className="font-medium ">Back to Problems</span>
-            </button>
+                <span className="font-medium ">Back to Problems</span>
+                </button>
               </div>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
@@ -717,7 +792,7 @@ const ProblemSolve = () => {
               </button>
             </div>
           </div>
-  
+
           {/* Scrollable Content */}
           <div ref={leftPanelRef} className="flex-1 overflow-auto p-4">
             {activeTab === "Description" && (
@@ -759,25 +834,67 @@ const ProblemSolve = () => {
               </>
             )}
             {activeTab === "Submissions" && (
-              <>
-                {/* Celebration Confetti/Badge and Submission Summary */}
-                {showCelebration && (
-                  <>
-                    <Confetti
-                      width={windowSize.width}
-                      height={windowSize.height}
-                      numberOfPieces={120}
-                      recycle={false}
-                      colors={["#7C3AED", "#22D3EE", "#F59E42", "#10B981", "#F43F5E"]}
-                      style={{ position: "absolute", left: 0, top: 0, zIndex: 10 }}
-                    />
-                    <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
-                      <div className="bg-gradient-to-r from-purple-500 via-pink-400 to-yellow-400 text-white px-8 py-4 rounded-2xl shadow-xl text-2xl font-bold flex items-center gap-3 animate-bounce border-4 border-white">
-                        🎉 Congratulations! 🎉
+              <div className="w-full">
+                {/* Test Results Panel (compile error or test cases) */}
+                {testResults && (
+                  <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 mb-4">
+                    {testResults.isCompileError ? (
+                      <div className="text-red-700">
+                        <div className="flex items-center gap-2 mb-2">
+                          <XCircle className="text-red-500" />
+                          <span className="font-bold">Compile Error</span>
+                        </div>
+                        <pre className="bg-red-100 border border-red-200 rounded p-3 text-sm text-red-800 whitespace-pre-wrap">
+                          {testResults.error}
+                        </pre>
+                        {testResults.compileErrorDetails && testResults.compileErrorDetails.line && (
+                          <div className="mt-2 text-xs text-gray-600">Line: {testResults.compileErrorDetails.line}</div>
+                        )}
                       </div>
-                    </div>
-                  </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-2">
+                          {testResults.passed ? (
+                            <CheckCircle className="text-green-600" />
+                          ) : (
+                            <AlertCircle className="text-red-500" />
+                          )}
+                          <span className={`font-bold ${testResults.passed ? 'text-green-700' : 'text-red-700'}`}>{testResults.passed ? 'All Test Cases Passed!' : 'Some Test Cases Failed'}</span>
+                        </div>
+                        <div className="flex gap-2 mb-2">
+                          {testResults.details && testResults.details.map((tc, idx) => (
+                            <button
+                              key={idx}
+                              className={`px-3 py-1 text-xs rounded border ${activeTestCase === idx ? 'bg-blue-100 border-blue-400 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-600'}`}
+                              onClick={() => setActiveTestCase(idx)}
+                            >
+                              Case {idx + 1}
+                            </button>
+                          ))}
+                        </div>
+                        {testResults.details && testResults.details[activeTestCase] && (
+                          <div className="bg-white border border-gray-200 rounded p-3 mb-2">
+                            <div className="font-mono text-xs text-gray-600 mb-1">Input:</div>
+                            <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].input}</div>
+                            <div className="font-mono text-xs text-gray-600 mb-1">Expected Output:</div>
+                            <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
+                            <div className="font-mono text-xs text-gray-600 mb-1">Actual Output:</div>
+                            <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
+                            {testResults.details[activeTestCase].error && (
+                              <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
+                            )}
+                            <div className={`mt-2 px-2 py-1 rounded text-xs ${testResults.details[activeTestCase].passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{testResults.details[activeTestCase].passed ? '✓ Passed' : '✗ Failed'}</div>
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500">{testResults.details && testResults.details.filter(tc => tc.passed).length}/{testResults.details ? testResults.details.length : 0} testcases passed</div>
+                        {testResults.error && !testResults.passed && (
+                          <div className="text-xs text-red-600 mt-2">{testResults.error}</div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 )}
+                {/* Show all previous submissions if any */}
                 {allSubmissions.length > 0 ? (
                   <div className="mb-8">
                     {allSubmissions.map((sub, idx) => (
@@ -816,6 +933,9 @@ const ProblemSolve = () => {
                                 <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
                                 <div className="text-xs text-gray-600">Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
                                 <div className="text-xs text-gray-600">Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
+                                {tc.error && (
+                                  <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{tc.error}</span></div>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -826,11 +946,10 @@ const ProblemSolve = () => {
                 ) : (
                   <div className="text-gray-500 text-center mt-8">No submissions yet.</div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
-
         {/* Right Panel: Code Editor and Results */}
         <div className="w-1/2 flex flex-col bg-white">
           {/* Code Editor Header */}
@@ -889,7 +1008,6 @@ const ProblemSolve = () => {
               </div>
             </div>
           </div>
-  
           {/* Code Editor */}
           <div className="flex-1 min-h-0">
             {selectedLanguage && (
@@ -920,132 +1038,72 @@ const ProblemSolve = () => {
               />
             )}
           </div>
-  
-          {/* Test Results Panel */}
+          {/* Test Results Panel (compile error or test cases) */}
           {testResults && (
             <div className="border-t border-gray-200 bg-gray-50">
-              {/* Test Results Header */}
               <div className="flex items-center justify-between p-3 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-700">Testcase</span>
                   <span className="text-sm text-gray-500">Test Result</span>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
-  
-              {/* Test Results Content */}
               <div className="p-4 max-h-48 overflow-auto">
-                {/* Test Case Tabs */}
-                <div className="flex gap-2 mb-4">
-                  {Array.isArray(testResults?.details) && testResults.details.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`px-3 py-1 text-sm rounded ${
-                        index === 0
-                          ? "bg-blue-100 text-blue-700 border border-blue-200"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      Case {index + 1}
-                    </button>
-                  ))}
-                </div>
-  
-                {/* Result Status */}
-                <div className={`p-3 rounded-lg border ${
-                  testResults.passed
-                    ? "bg-green-50 border-green-200 text-green-800"
-                    : "bg-red-50 border-red-200 text-red-800"
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    {testResults.passed ? (
-                      <>
-                        <CheckCircle size={16} className="text-green-600" />
-                        <span className="font-medium">Accepted</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle size={16} className="text-red-600" />
-                        <span className="font-medium">Wrong Answer</span>
-                      </>
+                {testResults.isCompileError ? (
+                  <div className="text-red-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <XCircle className="text-red-500" />
+                      <span className="font-bold">Compile Error</span>
+                    </div>
+                    <pre className="bg-red-100 border border-red-200 rounded p-3 text-sm text-red-800 whitespace-pre-wrap">
+                      {testResults.error}
+                    </pre>
+                    {testResults.compileErrorDetails && testResults.compileErrorDetails.line && (
+                      <div className="mt-2 text-xs text-gray-600">Line: {testResults.compileErrorDetails.line}</div>
                     )}
                   </div>
-  
-                  {/* Test Case Details */}
-                  <div className="space-y-3">
-                    {Array.isArray(testResults?.details) && testResults.details.map((tc, idx) => (
-                      <div key={idx} className="text-sm">
-                        <div className="font-mono bg-white p-2 rounded border">
-                          <div className="text-gray-600">Input:</div>
-                          <div className="text-gray-800">{tc.input}</div>
-                        </div>
-                        <div className="font-mono bg-white p-2 rounded border mt-1">
-                          <div className="text-gray-600">Output:</div>
-                          <div className="text-gray-800">{tc.output}</div>
-                        </div>
-                        <div className={`mt-1 px-2 py-1 rounded text-xs ${
-                          tc.passed ? "text-green-700" : "text-red-700"
-                        }`}>
-                          {tc.passed ? "✓ Passed" : "✗ Failed"}
-                        </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2 mb-2">
+                      {testResults.details && testResults.details.map((tc, idx) => (
+                        <button
+                          key={idx}
+                          className={`px-3 py-1 text-xs rounded border ${activeTestCase === idx ? 'bg-blue-100 border-blue-400 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-600'}`}
+                          onClick={() => setActiveTestCase(idx)}
+                        >
+                          Case {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+                    {testResults.details && testResults.details[activeTestCase] && (
+                      <div className="bg-white border border-gray-200 rounded p-3 mb-2">
+                        <div className="font-mono text-xs text-gray-600 mb-1">Input:</div>
+                        <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].input}</div>
+                        <div className="font-mono text-xs text-gray-600 mb-1">Expected Output:</div>
+                        <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
+                        <div className="font-mono text-xs text-gray-600 mb-1">Actual Output:</div>
+                        <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
+                        {testResults.details[activeTestCase].error && (
+                          <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
+                        )}
+                        <div className={`mt-2 px-2 py-1 rounded text-xs ${testResults.details[activeTestCase].passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{testResults.details[activeTestCase].passed ? '✓ Passed' : '✗ Failed'}</div>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    )}
+                    <div className="text-xs text-gray-500">{testResults.details && testResults.details.filter(tc => tc.passed).length}/{testResults.details ? testResults.details.length : 0} testcases passed</div>
+                    {testResults.error && !testResults.passed && (
+                      <div className="text-xs text-red-600 mt-2">{testResults.error}</div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-  
-      {/* Webcam Modal */}
-      {showWebcam && showProctoring && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 relative w-80">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
-              onClick={() => setShowWebcam(false)}
-              aria-label="Close Camera"
-            >
-              ✕
-            </button>
-            <Webcam ref={webcamRef} mirrored className="w-full rounded-xl" />
-            <div className="mt-2 text-xs text-gray-600 text-center">
-              Camera is active for proctoring
-            </div>
-          </div>
-        </div>
-      )}
-  
-      {/* Notifications */}
-      <AnimatePresence>
-        {showWarning && showProctoring && (
-          <motion.div
-            className="fixed top-4 right-4 bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-lg z-50"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="flex items-center gap-2">
-              <AlertCircle className="text-red-500" />
-              <p className="font-medium">
-                Warning: Suspicious activity detected!
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-  
-      {/* Confirmation Modal for navigation */}
       {showNavConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Are you sure you want to exit?</h2>
-            <p className="mb-6">You have unsaved code. If you leave, your code will be lost.</p>
+            <h2 className="text-xl font-bold mb-4">Unsaved Code Warning</h2>
+            <p className="mb-6">You have unsaved code changes. If you leave this page, your code will be lost.<br/>Are you sure you want to exit?</p>
             <div className="flex justify-end gap-4">
               <button
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
@@ -1061,7 +1119,7 @@ const ProblemSolve = () => {
                   navigate("/userDashboard/user-problems");
                 }}
               >
-                Exit
+                Leave Anyway
               </button>
             </div>
           </div>
