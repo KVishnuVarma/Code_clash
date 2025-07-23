@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Languages,
   Timer,
+  Trophy,
   XCircle,
   HelpCircle,
 } from "lucide-react";
@@ -710,15 +711,6 @@ const ProblemSolve = () => {
             </div>
             {/* Participants Button */}
             <div className="relative flex items-center">
-              <button
-                className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs font-semibold border border-blue-200"
-                onClick={() => setShowParticipants((v) => !v)}
-                title="View Participants"
-              >
-                <Users size={16} />
-                <span>{participants.length}</span>
-              </button>
-              {/* Dropdown/modal for participants */}
               {showParticipants && (
                 <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded shadow-lg z-50 max-h-72 overflow-auto">
                   <div className="p-2 border-b font-semibold text-gray-700 flex items-center gap-2">
@@ -733,7 +725,7 @@ const ProblemSolve = () => {
                         <li key={p.userId} className="p-2 flex flex-col">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-800">{p.name}</span>
-                            <span className={`text-xs rounded px-2 py-0.5 ml-2 ${p.status === 'Accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{p.status}</span>
+                            <span className={`text-xs rounded px-2 py-0.5 ml-2 ${p.status === 'Accepted' ? 'bg-green-600 text-green-1000' : 'bg-red-100 text-red-700'}`}>{p.status}</span>
                           </div>
                           <div className="flex gap-4 text-xs text-gray-600 mt-1">
                             <span>Score: <span className="font-semibold text-gray-800">{p.score}</span></span>
@@ -798,6 +790,13 @@ const ProblemSolve = () => {
                 onClick={() => setActiveTab("Submissions")}
               >
                 Submissions
+              </button>
+              <button
+                className={`px-4 py-2 text-sm font-medium ${activeTab === "Participants" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
+                onClick={() => setActiveTab("Participants")}
+              >
+                Participants
+                <span className="ml-2 bg-blue-100 text-blue-700 rounded px-2 py-0.5 text-xs font-semibold">{participants.length}</span>
               </button>
               {/* AI Help Button in the tab bar */}
               <button
@@ -1020,6 +1019,114 @@ const ProblemSolve = () => {
                 )}
               </div>
             )}
+            {activeTab === "Participants" && (
+              <div className="bg-slate-900 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-slate-700 to-slate-600 p-6">
+                  <div className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-full">
+                      <Users size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold">Participants</h2>
+                      <p className="text-slate-200 text-sm">{participants.length} members joined</p>
+                    </div>
+                  </div>
+                </div>
+    {/* Content */}
+    {participants.length === 0 ? (
+      <div className="flex flex-col items-center justify-center py-16 px-6">
+        <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mb-4">
+          <Users size={32} className="text-slate-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-slate-200 mb-2">No participants yet</h3>
+        <p className="text-slate-400 text-center">Participants will appear here once they join the session.</p>
+      </div>
+    ) : (
+      <div className="divide-y divide-slate-600">
+        {participants.map((participant, index) => (
+          <div key={participant.userId} className="p-6 hover:bg-slate-700/50 transition-colors duration-200">
+            <div className="flex items-center justify-between">
+              {/* Left side - Name and Status */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  {participant.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-100 text-lg">
+                    {participant.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                      participant.status === 'Accepted' 
+                        ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-700' 
+                        : 'bg-red-900/30 text-red-300 border border-red-700'
+                    }`}>
+                      <span className={`w-2 h-2 rounded-full mr-2 ${
+                        participant.status === 'Accepted' ? 'bg-emerald-400' : 'bg-red-400'
+                      }`}></span>
+                      {participant.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right side - Stats */}
+              {participant.status === 'Accepted' && (
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-slate-300 mb-1">
+                      <Trophy size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="text-2xl font-bold text-slate-100">{participant.score}</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wide">Score</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-slate-300 mb-1">
+                      <Clock size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="text-2xl font-bold text-slate-100">{participant.timeTaken}s</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wide">Time</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Ranking indicator for top performers */}
+            {participant.status === 'Accepted' && index < 3 && (
+              <div className="mt-3 pt-3 border-t border-slate-600">
+                <div className="flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-slate-400' : 'bg-orange-400'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <span className="text-sm text-slate-400">
+                    {index === 0 ? 'Top Performer' : index === 1 ? 'Second Place' : 'Third Place'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Footer Stats */}
+    {participants.length > 0 && (
+      <div className="bg-slate-700 px-6 py-4 border-t border-slate-600">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400">
+            {participants.filter(p => p.status === 'Accepted').length} accepted • {participants.filter(p => p.status === 'Declined').length} declined
+          </span>
+          <span className="text-slate-400">
+            Avg Score: {Math.round(participants.filter(p => p.status === 'Accepted').reduce((sum, p) => sum + p.score, 0) / participants.filter(p => p.status === 'Accepted').length) || 0}
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+)}
           </div>
         </div>
         {/* Right Panel: Code Editor and Results */}
