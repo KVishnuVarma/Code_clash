@@ -58,34 +58,54 @@ exports.errorFix = async (req, res) => {
       }
     }
 
+    // --- New: Always get correct code for the problem ---
+    const correctCode = await getAcceptedCode(problemId);
     let prompt = "Check your logic and syntax near the error shown.";
+    let userFriendlyError = null;
+
+    // --- New: If there is a real error, provide a user-friendly explanation ---
     if (mistake && mistake.error) {
-      if (mistake.error.toLowerCase().includes("index")) prompt = "Check your array indices and bounds.";
-      if (mistake.error.toLowerCase().includes("type")) prompt = "Check your variable types and conversions.";
-      if (mistake.error.toLowerCase().includes("syntax")) prompt = "Check for missing brackets, colons, or semicolons.";
+      const err = mistake.error.toLowerCase();
+      if (err.includes("syntaxerror") || err.includes("invalid syntax")) {
+        prompt = "You have a syntax error. Check for missing brackets, colons, or indentation issues.";
+        userFriendlyError = "Syntax Error: Please check your code for missing or misplaced symbols (e.g., brackets, colons, indentation).";
+      } else if (err.includes("index")) {
+        prompt = "Check your array indices and bounds.";
+        userFriendlyError = "Index Error: You may be accessing an array or string out of bounds.";
+      } else if (err.includes("type")) {
+        prompt = "Check your variable types and conversions.";
+        userFriendlyError = "Type Error: There may be a mismatch in variable types or conversions.";
+      } else if (err.includes("nameerror")) {
+        prompt = "Check for typos or undefined variables.";
+        userFriendlyError = "Name Error: You may be using a variable that is not defined or misspelled.";
+      } else if (err.includes("timeout")) {
+        prompt = "Optimize your code for performance.";
+        userFriendlyError = "Timeout Error: Your code is taking too long to run. Try optimizing it.";
+      }
     }
 
-    const correctCode = await getAcceptedCode(problemId);
-
-    // Robust user feedback
+    // --- New: Always return a prompt and sample code, even if no user submission ---
     if (!lastWrong) {
       return res.json({
         mistake: null,
-        prompt: "No previous submissions found for you. Try submitting your code first.",
-        correctCode: correctCode || "No accepted solution found for this problem yet."
+        prompt: "You haven't submitted code yet, but you can review the sample solution and explanation below to help you get started!",
+        correctCode: correctCode || "No accepted solution found for this problem yet.",
+        userFriendlyError: null
       });
     }
     if (!mistake) {
       return res.json({
         mistake: null,
         prompt: "No common mistakes found. Try submitting your code to see feedback.",
-        correctCode: correctCode || "No accepted solution found for this problem yet."
+        correctCode: correctCode || "No accepted solution found for this problem yet.",
+        userFriendlyError: null
       });
     }
     res.json({
       mistake,
       prompt,
-      correctCode: correctCode || "No accepted solution found for this problem yet."
+      correctCode: correctCode || "No accepted solution found for this problem yet.",
+      userFriendlyError: userFriendlyError || null
     });
   } catch (err) {
     console.error("[AIHELP] /error-fix error:", err);

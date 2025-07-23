@@ -79,6 +79,11 @@ const Aihelp = ({ open, onClose, code, language, problemId, userId }) => {
         return (
           <div className="mt-6">
             <h3 className="font-semibold text-lg mb-2 text-red-700 flex items-center gap-2"><Bug size={20}/> Error Analysis</h3>
+            {/* Show user-friendly error if present */}
+            {result.userFriendlyError && (
+              <div className="mb-2 text-red-800 font-semibold text-sm">{result.userFriendlyError}</div>
+            )}
+            {/* Show mistake details if present */}
             {result.mistake ? (
               <>
                 {result.mistake.input && <div className="mb-1 text-sm"><span className="font-semibold">Input:</span> <span className="font-mono">{result.mistake.input}</span></div>}
@@ -86,7 +91,8 @@ const Aihelp = ({ open, onClose, code, language, problemId, userId }) => {
                 {result.mistake.actual && <div className="mb-1 text-sm"><span className="font-semibold">Actual:</span> <span className="font-mono">{result.mistake.actual}</span></div>}
                 {result.mistake.error && <div className="mb-2 text-red-700 text-xs">Error: {result.mistake.error}</div>}
               </>
-            ) : <div className="mb-2 text-green-700">No specific mistake found.</div>}
+            ) : null}
+            {/* Always show prompt and sample code */}
             <div className="mb-2 text-blue-700 font-semibold">Prompt: {result.prompt}</div>
             {result.correctCode && (
               <div className="mt-2">

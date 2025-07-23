@@ -281,8 +281,8 @@ const getSubmissionDetails = async (req, res) => {
 const getProblemParticipants = async (req, res) => {
   const { problemId } = req.params;
   try {
-    // Find all submissions for the problem
-    const submissions = await Submission.find({ problemId })
+    // Find all submissions for the problem with status 'Accepted' only
+    const submissions = await Submission.find({ problemId, status: 'Accepted' })
       .populate('userId', 'name email points')
       .lean();
     if (!submissions.length) {

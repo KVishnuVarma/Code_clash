@@ -425,6 +425,10 @@ const ProblemSolve = () => {
           if (user?._id && id) {
             getUserProblemSubmissions(user._id, id).then(setAllSubmissions);
           }
+          // --- Refetch participants after successful submission ---
+          if (id) {
+            getProblemParticipants(id).then(data => setParticipants(Array.isArray(data) ? data.filter(p => p.status === 'Accepted') : []));
+          }
         }
       } else {
         // Handle case where result structure is unexpected
@@ -612,7 +616,8 @@ const ProblemSolve = () => {
       if (!id) return;
       try {
         const data = await getProblemParticipants(id);
-        setParticipants(data);
+        // Only show participants with status 'Accepted'
+        setParticipants(Array.isArray(data) ? data.filter(p => p.status === 'Accepted') : []);
       } catch {
         setParticipants([]);
       }
