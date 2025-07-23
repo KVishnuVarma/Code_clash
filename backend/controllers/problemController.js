@@ -4,11 +4,12 @@ const Problem = require("../models/Problem");
 exports.createProblem = async (req, res) => {
     try {
         const { title, description, difficulty, testCases, languages } = req.body;
+        // testCases may now include explanation for each test case
         const newProblem = new Problem({
             title,
             description,
             difficulty,
-            testCases,
+            testCases, // testCases: [{input, output, explanation}]
             languages,
             totalParticipants: 0
         });
@@ -55,7 +56,7 @@ exports.getParticularProblems = async (req, res) => {
 exports.updateProblem = async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const updateData = req.body; // testCases may include explanation
 
         const updatedProblem = await Problem.findByIdAndUpdate(
             id,

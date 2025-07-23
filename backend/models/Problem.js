@@ -4,7 +4,7 @@ const ProblemSchema = new mongoose.Schema({
     title: String,
     description: String,
     difficulty: { type: String, enum: ["Easy", "Medium", "Hard"] },
-    testCases: [{ input: String, output: String }],
+    testCases: [{ input: String, output: String, explanation: String }],
     languages: [String], // e.g., ["Python", "JavaScript", "C++"]
     totalParticipants: { type: Number, default: 0 },
     statistics: {

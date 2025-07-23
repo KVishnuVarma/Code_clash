@@ -906,6 +906,12 @@ const ProblemSolve = () => {
                             <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
                             <div className="font-mono text-xs text-gray-600 mb-1">Actual Output:</div>
                             <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
+                            {testResults.details[activeTestCase].explanation && (
+                              <div className="mt-2">
+                                <div className="font-mono text-xs text-gray-600 mb-1">Explanation:</div>
+                                <div className="font-mono text-sm text-gray-700">{testResults.details[activeTestCase].explanation}</div>
+                              </div>
+                            )}
                             {testResults.details[activeTestCase].error && (
                               <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
                             )}
@@ -961,6 +967,9 @@ const ProblemSolve = () => {
                                   <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
                                   <div className="text-xs text-gray-600">Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
                                   <div className="text-xs text-gray-600">Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
+                                  {tc.explanation && (
+                                    <div className="mt-1 text-xs text-gray-700">Explanation: <span className="font-mono">{tc.explanation}</span></div>
+                                  )}
                                   {tc.error && (
                                     <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{tc.error}</span></div>
                                   )}
@@ -1261,6 +1270,12 @@ const ProblemSolve = () => {
                         <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
                         <div className="font-mono text-xs text-gray-600 mb-1">Actual Output:</div>
                         <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
+                        {testResults.details[activeTestCase].explanation && (
+                          <div className="mt-2">
+                            <div className="font-mono text-xs text-gray-600 mb-1">Explanation:</div>
+                            <div className="font-mono text-sm text-gray-700">{testResults.details[activeTestCase].explanation}</div>
+                          </div>
+                        )}
                         {testResults.details[activeTestCase].error && (
                           <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
                         )}

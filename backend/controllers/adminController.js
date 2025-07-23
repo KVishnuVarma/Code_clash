@@ -22,6 +22,7 @@ const createContest = async (req, res) => {
 const uploadProblem = async (req, res) => {
     try {
         const { title, description, testCases, difficulty, contestId } = req.body;
+        // testCases may now include explanation for each test case
 
         if (!title || !description || !testCases || !difficulty || !contestId) {
             return res.status(400).json({ error: '❌ All fields are required' });

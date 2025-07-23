@@ -193,12 +193,13 @@ const submitCode = async (req, res) => {
       success: true,
       submissionId: submission ? submission._id : null,
       results: {
-        testCases: testResults.map((test) => ({
+        testCases: testResults.map((test, idx) => ({
           input: test.input,
           output: test.actualOutput,
           passed: test.passed,
           error: test.error || null,
           stderr: test.stderr || null,
+          explanation: (problem.testCases && problem.testCases[idx] && problem.testCases[idx].explanation) ? problem.testCases[idx].explanation : undefined,
         })),
         metrics: {
           totalTests: testCasesToRun.length,

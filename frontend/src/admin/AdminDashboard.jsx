@@ -241,6 +241,19 @@ const AdminDashboard = () => {
           />
         </div>
       </div>
+      {/* Explanation Info Section */}
+      <div className="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-700 mt-8">
+        <h2 className="text-2xl font-bold mb-2 text-blue-300">Test Case Explanations</h2>
+        <p className="text-gray-200 mb-2">
+          <span className="font-semibold text-blue-200">Why add explanations?</span> Adding an explanation to each test case helps users understand the logic and reasoning behind the expected output. This is especially useful for edge cases or non-obvious scenarios.
+        </p>
+        <ul className="list-disc list-inside text-gray-300 mb-2">
+          <li>Explanations are shown to users in the problem view and while solving problems.</li>
+          <li>They improve learning and reduce confusion for users.</li>
+          <li>Admins can add or edit explanations for each test case in the Problem Management section.</li>
+        </ul>
+        <div className="mt-2 text-sm text-blue-200">To add an explanation, go to <span className="font-semibold">Problem Management</span> &rarr; Edit or Add Problem &rarr; Test Cases.</div>
+      </div>
     </div>
   );
 };

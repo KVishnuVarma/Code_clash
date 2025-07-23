@@ -59,7 +59,7 @@ const SortableTestCase = ({ testCase, index, onChange, onRemove }) => {
       >
         <GripVertical className="w-5 h-5 text-gray-400" />
       </div>
-      <div className="flex-1 grid grid-cols-2 gap-4">
+      <div className="flex-1 grid grid-cols-3 gap-4">
         <input
           type="text"
           value={testCase.input}
@@ -72,6 +72,13 @@ const SortableTestCase = ({ testCase, index, onChange, onRemove }) => {
           value={testCase.output}
           onChange={(e) => onChange(index, "output", e.target.value)}
           placeholder="Expected Output"
+          className="p-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
+        />
+        <input
+          type="text"
+          value={testCase.explanation || ''}
+          onChange={(e) => onChange(index, "explanation", e.target.value)}
+          placeholder="Explanation (optional)"
           className="p-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
         />
       </div>
@@ -154,7 +161,7 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
     title: "",
     description: "",
     difficulty: "Easy",
-    testCases: [{ input: "", output: "" }],
+    testCases: [{ input: "", output: "", explanation: "" }],
     languages: ["Python"],
   });
 
@@ -173,7 +180,7 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
         title: "",
         description: "",
         difficulty: "Easy",
-        testCases: [{ input: "", output: "" }],
+        testCases: [{ input: "", output: "", explanation: "" }],
         languages: ["Python"],
       });
     }
@@ -295,7 +302,7 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
                       ...formData,
                       testCases: [
                         ...(formData.testCases || []),
-                        { input: "", output: "" },
+                        { input: "", output: "", explanation: "" },
                       ],
                     })
                   }
