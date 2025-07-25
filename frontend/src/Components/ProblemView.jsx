@@ -92,7 +92,7 @@ const ProblemDetails = () => {
 
     // Remove old calculateSuccessRate function and use problem.successRate directly
     // const successRate = calculateSuccessRate(problem);
-    const successRate = typeof problem.successRate === 'number' ? problem.successRate : 0;
+    const successRate = typeof problem?.successRate === 'number' ? problem.successRate : 0;
 
     if (loading) {
         return (
