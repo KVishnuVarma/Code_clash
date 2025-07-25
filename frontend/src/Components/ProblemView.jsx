@@ -138,31 +138,8 @@ const ProblemDetails = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
-            {/* Header Section */}
-            <motion.div 
-                className="bg-white rounded-xl shadow-sm p-6 mb-6"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div className="flex justify-between items-start mb-4">
-                    <h1 className="text-3xl font-bold text-gray-800">{problem.title}</h1>
-                    {/* Show Start button only if not solved */}
-                    {!userSubmission && (
-                        <motion.button
-                            onClick={handleStartSolving}
-                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Start
-                        </motion.button>
-                    )}
-                </div>
-                <p className="text-gray-600 text-lg">{problem.description}</p>
-            </motion.div>
-
             {/* User Stats Section (if solved) */}
-            {userSubmission && (
+            {userSubmission ? (
                 <motion.div
                     className="bg-green-50 border border-green-200 rounded-xl shadow-sm p-6 mb-6"
                     initial={{ opacity: 0, y: -10 }}
@@ -190,109 +167,131 @@ const ProblemDetails = () => {
                         </div>
                     </div>
                 </motion.div>
-            )}
-
-            {/* Problem Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <motion.div 
-                    className="bg-white p-6 rounded-xl shadow-sm"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <Clock className="text-blue-500" />
-                        <h2 className="text-lg font-semibold text-gray-700">Time Limit</h2>
-                    </div>
-                    <p className="text-gray-600">30 minutes</p>
-                </motion.div>
-
-                <motion.div 
-                    className="bg-white p-6 rounded-xl shadow-sm"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <Code2 className="text-green-500" />
-                        <h2 className="text-lg font-semibold text-gray-700">Languages</h2>
-                    </div>
-                    <p className="text-gray-600">
-                        {problem.languages && problem.languages.length > 0 
-                            ? problem.languages.join(", ")
-                            : 'No languages specified'}
-                    </p>
-                </motion.div>
-
-                <motion.div 
-                    className="bg-white p-6 rounded-xl shadow-sm"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <Users className="text-purple-500" />
-                        <h2 className="text-lg font-semibold text-gray-700">Participants</h2>
-                    </div>
-                    <p className="text-gray-600">
-                        {problem.totalParticipants.toLocaleString()}
-                    </p>
-                </motion.div>
-
-                <motion.div 
-                    className="bg-white p-6 rounded-xl shadow-sm"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="text-indigo-500" />
-                        <h2 className="text-lg font-semibold text-gray-700">Success Rate</h2>
-                    </div>
-                    <p className="text-gray-600">{successRate}%</p>
-                </motion.div>
-            </div>
-
-            {/* Test Cases */}
-            <motion.div 
-                className="bg-white rounded-xl shadow-sm p-6 mb-6"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-            >
-                <div className="flex items-center gap-3 mb-4">
-                    <BookOpen className="text-blue-500" />
-                    <h2 className="text-2xl font-semibold text-gray-700">Example Test Cases</h2>
-                </div>
-                <div className="space-y-4">
-                    {problem.testCases && problem.testCases.length > 0 ? (
-                        problem.testCases.map((testCase, index) => (
-                            <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <h3 className="font-medium text-gray-700 mb-2">Input:</h3>
-                                        <pre className="bg-gray-100 p-3 rounded">{testCase.input}</pre>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-medium text-gray-700 mb-2">Output:</h3>
-                                        <pre className="bg-gray-100 p-3 rounded">{testCase.output}</pre>
-                                    </div>
-                                </div>
-                                {testCase.explanation && (
-                                    <div className="mt-3">
-                                        <h3 className="font-medium text-gray-700 mb-2">Explanation:</h3>
-                                        <p className="text-gray-600">{testCase.explanation}</p>
-                                    </div>
-                                )}
-                            </div>
-                        ))
-                    ) : (
-                        <div className="text-center py-6 text-gray-500">
-                            No test cases available
+            ) : (
+                <>
+                    {/* Header Section */}
+                    <motion.div 
+                        className="bg-white rounded-xl shadow-sm p-6 mb-6"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="flex justify-between items-start mb-4">
+                            <h1 className="text-3xl font-bold text-gray-800">{problem.title}</h1>
+                            <motion.button
+                                onClick={handleStartSolving}
+                                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Start
+                            </motion.button>
                         </div>
-                    )}
-                </div>
-            </motion.div>
+                        <p className="text-gray-600 text-lg">{problem.description}</p>
+                    </motion.div>
+
+                    {/* Problem Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <motion.div 
+                            className="bg-white p-6 rounded-xl shadow-sm"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <Clock className="text-blue-500" />
+                                <h2 className="text-lg font-semibold text-gray-700">Time Limit</h2>
+                            </div>
+                            <p className="text-gray-600">30 minutes</p>
+                        </motion.div>
+
+                        <motion.div 
+                            className="bg-white p-6 rounded-xl shadow-sm"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <Code2 className="text-green-500" />
+                                <h2 className="text-lg font-semibold text-gray-700">Languages</h2>
+                            </div>
+                            <p className="text-gray-600">
+                                {problem.languages && problem.languages.length > 0 
+                                    ? problem.languages.join(", ")
+                                    : 'No languages specified'}
+                            </p>
+                        </motion.div>
+
+                        <motion.div 
+                            className="bg-white p-6 rounded-xl shadow-sm"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <Users className="text-purple-500" />
+                                <h2 className="text-lg font-semibold text-gray-700">Participants</h2>
+                            </div>
+                            <p className="text-gray-600">
+                                {problem.totalParticipants.toLocaleString()}
+                            </p>
+                        </motion.div>
+
+                        <motion.div 
+                            className="bg-white p-6 rounded-xl shadow-sm"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <CheckCircle className="text-indigo-500" />
+                                <h2 className="text-lg font-semibold text-gray-700">Success Rate</h2>
+                            </div>
+                            <p className="text-gray-600">{successRate}%</p>
+                        </motion.div>
+                    </div>
+
+                    {/* Test Cases */}
+                    <motion.div 
+                        className="bg-white rounded-xl shadow-sm p-6 mb-6"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <BookOpen className="text-blue-500" />
+                            <h2 className="text-2xl font-semibold text-gray-700">Example Test Cases</h2>
+                        </div>
+                        <div className="space-y-4">
+                            {problem.testCases && problem.testCases.length > 0 ? (
+                                problem.testCases.map((testCase, index) => (
+                                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <h3 className="font-medium text-gray-700 mb-2">Input:</h3>
+                                                <pre className="bg-gray-100 p-3 rounded">{testCase.input}</pre>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium text-gray-700 mb-2">Output:</h3>
+                                                <pre className="bg-gray-100 p-3 rounded">{testCase.output}</pre>
+                                            </div>
+                                        </div>
+                                        {testCase.explanation && (
+                                            <div className="mt-3">
+                                                <h3 className="font-medium text-gray-700 mb-2">Explanation:</h3>
+                                                <p className="text-gray-600">{testCase.explanation}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-6 text-gray-500">
+                                    No test cases available
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                </>
+            )}
         </div>
     );
 };
