@@ -41,7 +41,6 @@ const ProblemSolve = () => {
   const [isExamTerminated, setIsExamTerminated] = useState(false);
   const [testResults, setTestResults] = useState(null);
   const [canSubmit, setCanSubmit] = useState(false);
-  const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState(null);
   const [code, setCode] = useState("");
@@ -190,8 +189,25 @@ const ProblemSolve = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problem]);
 
+  // Timer persistence keys
+  const timerKey = user && id ? `codeclash_timer_${user._id}_${id}` : null;
+
+  // Timer: use localStorage for persistence
+  const [startTime, setStartTime] = useState(() => {
+    if (timerKey) {
+      const saved = localStorage.getItem(timerKey);
+      return saved ? parseInt(saved, 10) : Date.now();
+    }
+    return Date.now();
+  });
+
   useEffect(() => {
-    // Timer for elapsed time
+    if (timerKey) {
+      localStorage.setItem(timerKey, startTime.toString());
+    }
+  }, [startTime, timerKey]);
+
+  useEffect(() => {
     timerInterval.current = setInterval(() => {
       setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
@@ -569,12 +585,20 @@ const ProblemSolve = () => {
     }
   }, [user, selectedLanguage, id]);
 
-  // Refresh button handler: clear code and localStorage, reset to template
+  // Refresh button handler: clear code and timer from localStorage, reset to template
   const handleRefreshCode = () => {
-    if (user && selectedLanguage && id) {
-      localStorage.removeItem(`codeclash_code_${user._id}_${id}_${selectedLanguage.id}`);
-      setCode(selectedLanguage.template || "");
-      setIsDirty(true);
+    if (window.confirm("Are you sure you want to refresh the code? This will reset your code and timer.")) {
+      if (user && selectedLanguage && id) {
+        localStorage.removeItem(`codeclash_code_${user._id}_${id}_${selectedLanguage.id}`);
+        setCode(selectedLanguage.template || "");
+        setIsDirty(true);
+      }
+      if (timerKey) {
+        localStorage.removeItem(timerKey);
+        const now = Date.now();
+        setStartTime(now);
+        setElapsedTime(0);
+      }
     }
   };
 
