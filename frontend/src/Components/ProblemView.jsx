@@ -10,6 +10,8 @@ import {
   ArrowRight,
   BookOpen
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { getUserProblemSubmissions, getProblemParticipants } from "../services/problemService";
 
 const API_BASE_URL = 'https://code-clash-s9vq.onrender.com/api';
 
@@ -19,6 +21,10 @@ const ProblemDetails = () => {
     const [problem, setProblem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { user } = useAuth();
+    const [userSubmission, setUserSubmission] = useState(null);
+    const [participants, setParticipants] = useState([]);
+    const [rank, setRank] = useState(null);
 
     useEffect(() => {
         const fetchProblem = async () => {
@@ -39,6 +45,44 @@ const ProblemDetails = () => {
 
         fetchProblem();
     }, [id]);
+
+    useEffect(() => {
+        const fetchUserStats = async () => {
+            if (!user?._id || !id) return;
+            try {
+                const subs = await getUserProblemSubmissions(user._id, id);
+                // Find the best (Accepted) submission
+                const accepted = subs.find(s => s.status === "Accepted");
+                setUserSubmission(accepted || null);
+            } catch {
+                setUserSubmission(null);
+            }
+        };
+        const fetchParticipantsList = async () => {
+            try {
+                const data = await getProblemParticipants(id);
+                setParticipants(Array.isArray(data) ? data : (data.participants || []));
+            } catch {
+                setParticipants([]);
+            }
+        };
+        fetchUserStats();
+        fetchParticipantsList();
+    }, [user, id]);
+
+    useEffect(() => {
+        if (!userSubmission || !participants.length) {
+            setRank(null);
+            return;
+        }
+        // Sort participants by score desc, then timeTaken asc
+        const sorted = [...participants].sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return (a.timeTaken || 99999) - (b.timeTaken || 99999);
+        });
+        const userIdx = sorted.findIndex(p => String(p.userId) === String(user._id));
+        setRank(userIdx !== -1 ? userIdx + 1 : null);
+    }, [userSubmission, participants, user]);
 
     const handleStartSolving = () => {
         if (id) {
@@ -102,17 +146,51 @@ const ProblemDetails = () => {
             >
                 <div className="flex justify-between items-start mb-4">
                     <h1 className="text-3xl font-bold text-gray-800">{problem.title}</h1>
-                    <motion.button
-                        onClick={handleStartSolving}
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        Start
-                    </motion.button>
+                    {/* Show Start button only if not solved */}
+                    {!userSubmission && (
+                        <motion.button
+                            onClick={handleStartSolving}
+                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Start
+                        </motion.button>
+                    )}
                 </div>
                 <p className="text-gray-600 text-lg">{problem.description}</p>
             </motion.div>
+
+            {/* User Stats Section (if solved) */}
+            {userSubmission && (
+                <motion.div
+                    className="bg-green-50 border border-green-200 rounded-xl shadow-sm p-6 mb-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <h2 className="text-2xl font-semibold text-green-700 mb-4 flex items-center gap-2">
+                        <CheckCircle /> Solved! Your Performance
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div>
+                            <div className="text-gray-700 font-medium mb-1">Accuracy</div>
+                            <div className="text-lg font-bold">{userSubmission.passedTests || userSubmission.metrics?.passedTests || 0} / {userSubmission.totalTests || userSubmission.metrics?.totalTests || problem.testCases.length}</div>
+                        </div>
+                        <div>
+                            <div className="text-gray-700 font-medium mb-1">Time Taken</div>
+                            <div className="text-lg font-bold">{userSubmission.timeTaken || userSubmission.metrics?.timeTaken || '-'} s</div>
+                        </div>
+                        <div>
+                            <div className="text-gray-700 font-medium mb-1">Score</div>
+                            <div className="text-lg font-bold">{userSubmission.score || userSubmission.metrics?.score || 0}</div>
+                        </div>
+                        <div>
+                            <div className="text-gray-700 font-medium mb-1">Rank</div>
+                            <div className="text-lg font-bold">{rank ? `#${rank}` : '-'}</div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Problem Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
