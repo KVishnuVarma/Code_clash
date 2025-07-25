@@ -34,7 +34,7 @@ const ProblemDetails = () => {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                setProblem(Array.isArray(data) && data.length > 0 ? data[0] : null);
+                setProblem(data && typeof data === 'object' ? data : null);
             } catch (err) {
                 console.error("Error fetching problem:", err);
                 setError(err instanceof Error ? err.message : "Failed to fetch problem details");
@@ -108,7 +108,7 @@ const ProblemDetails = () => {
                 <div className="bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
                     <p className="font-medium">Error: {error}</p>
                     <button 
-                        onClick={() => navigate('/problems/${id}/solve')}
+                        onClick={() => navigate('')}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                         Back to Problems
@@ -117,25 +117,7 @@ const ProblemDetails = () => {
             </div>
         );
     }
-
-    if (!problem) {
-        return (
-            <div className="min-h-screen bg-gray-50 p-8">
-                <div className="text-center py-12">
-                    <p className="text-xl text-gray-600 mb-4">Problem not found</p>
-                    <button 
-                        onClick={() => navigate('/problems/${id}/solve')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Back to Problems
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     // const successRate = calculateSuccessRate(problem);
-
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             {/* User Stats Section (if solved) */}
