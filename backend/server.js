@@ -27,7 +27,8 @@ if (!process.env.FRONTEND_URL) {
 const allowedOrigins = [
     process.env.FRONTEND_URL || deployedFrontend,
     deployedFrontend,
-    localFrontend
+    localFrontend,
+    "https://codeclashv.vercel.app" // Added deployed frontend URL
 ];
 
 app.use(cors({
