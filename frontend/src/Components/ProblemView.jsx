@@ -108,7 +108,7 @@ const ProblemDetails = () => {
                 <div className="bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
                     <p className="font-medium">Error: {error}</p>
                     <button 
-                        onClick={() => navigate('/problems')}
+                        onClick={() => navigate('/userDashboard/user-problems')}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                         Back to Problems
@@ -124,7 +124,7 @@ const ProblemDetails = () => {
                 <div className="text-center py-12">
                     <p className="text-xl text-gray-600 mb-4">Problem not found</p>
                     <button 
-                        onClick={() => navigate('/problems')}
+                        onClick={() => navigate('/userDashboard/user-problems')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         Back to Problems
