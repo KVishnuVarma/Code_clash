@@ -17,7 +17,7 @@ const app = express();
     }
 })();
 
-const deployedFrontend = "https://codeclashv.vercel.app";
+const deployedFrontend = "https://codeclashv.vercel.app"; // Updated deployed frontend URL
 const localFrontend = "http://localhost:5173";
 
 if (!process.env.FRONTEND_URL) {
