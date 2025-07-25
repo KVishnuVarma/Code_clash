@@ -13,7 +13,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { getUserProblemSubmissions, getProblemParticipants } from "../services/problemService";
 
-const API_BASE_URL = 'https://code-clash-s9vq.onrender.com/api';
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const ProblemDetails = () => {
     const { id } = useParams();

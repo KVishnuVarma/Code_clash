@@ -375,7 +375,7 @@ export default function Problems() {
 
   const fetchProblems = async () => {
     try {
-      const res = await fetch("https://code-clash-s9vq.onrender.com/api/problems");
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/problems`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setProblems(data);
@@ -405,7 +405,7 @@ export default function Problems() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`https://code-clash-s9vq.onrender.com/api/problems/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/problems/${id}`, {
         method: "DELETE",
       });
 
@@ -425,8 +425,8 @@ export default function Problems() {
     const isEditing = !!editingProblem;
     const method = isEditing ? "PUT" : "POST";
     const url = isEditing
-      ? `https://code-clash-s9vq.onrender.com/api/problems/update/${editingProblem._id}`
-      : "https://code-clash-s9vq.onrender.com/api/problems/add";
+      ? `${import.meta.env.VITE_BACKEND_URL}/api/problems/update/${editingProblem._id}`
+      : `${import.meta.env.VITE_BACKEND_URL}/api/problems/add`;
     try {
       const response = await fetch(url, {
         method,

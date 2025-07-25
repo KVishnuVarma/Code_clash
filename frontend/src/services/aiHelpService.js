@@ -1,7 +1,7 @@
 // AI Help Service: Calls backend for error fix, review, and discussion using fetch with .then()
 
 export function getErrorFix({ userId, problemId, code, language }) {
-  return fetch('https://code-clash-s9vq.onrender.com/api/aihelp/error-fix', {
+  return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/aihelp/error-fix`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, problemId, code, language })
@@ -13,7 +13,7 @@ export function getErrorFix({ userId, problemId, code, language }) {
 }
 
 export function getReview({ userId, problemId, code, language }) {
-  return fetch('https://code-clash-s9vq.onrender.com/api/aihelp/review', {
+  return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/aihelp/review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, problemId, code, language })
@@ -25,7 +25,7 @@ export function getReview({ userId, problemId, code, language }) {
 }
 
 export function getDiscussion({ userId }) {
-  return fetch('https://code-clash-s9vq.onrender.com/api/aihelp/discussion', {
+  return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/aihelp/discussion`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId })
@@ -37,7 +37,7 @@ export function getDiscussion({ userId }) {
 }
 
 export function getGuideLines({ userId }) {
-  return fetch('https://code-clash-s9vq.onrender.com/api/aihelp/guidelines', {
+  return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/aihelp/guidelines`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId })

@@ -25,7 +25,7 @@ function App() {
 
   const fetchContests = async () => {
     try {
-      const response = await fetch("https://code-clash-s9vq.onrender.com/api/contest", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contest`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -118,7 +118,7 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("https://code-clash-s9vq.onrender.com/api/contest", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -160,7 +160,7 @@ function App() {
   const openModal = async (contest) => {
     try {
       const response = await fetch(
-        `https://code-clash-s9vq.onrender.com/api/contest/${contest._id}/participants`
+        `${import.meta.env.VITE_BACKEND_URL}/api/contest/${contest._id}/participants`
       );
       const participantData = await response.json();
       setSelectedContest({ ...contest, ...participantData });

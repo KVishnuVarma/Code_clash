@@ -126,7 +126,7 @@ const ProblemSolve = () => {
         let data;
         try {
           const response = await fetch(
-            `https://code-clash-s9vq.onrender.com/api/problems/${id}`
+            `${import.meta.env.VITE_BACKEND_URL}/api/problems/${id}`
           );
           if (!response.ok) {
             throw new Error("API not available");

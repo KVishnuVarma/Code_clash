@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     // Fetch user details from backend
     const fetchUser = async () => {
         try {
-            const res = await fetch("https://code-clash-s9vq.onrender.com/api/auth/user", {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/user`, {
                 headers: { "x-auth-token": token },
             });
 
@@ -48,19 +48,33 @@ export const AuthProvider = ({ children }) => {
     // Login function
     const login = async (email, password) => {
         try {
-            const res = await fetch("https://code-clash-s9vq.onrender.com/api/auth/login", {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
             });
 
-            const data = await res.json();
-            if (!res.ok) {
-                alert(data.message);
-                return false;
+            let data = null;
+            const text = await res.text();
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    throw new Error("Invalid server response. Please try again later.");
+                }
             }
 
-            // Store in sessionStorage instead of localStorage for security
+            // Debug log for troubleshooting
+            // console.log("[LOGIN DEBUG] status:", res.status, "text:", text, "data:", data);
+
+            if (!res.ok) {
+                throw new Error((data && data.message) || "Login failed. Please try again.");
+            }
+
+            if (!data || !data.token || !data.user) {
+                throw new Error("Invalid server response. Please try again later.");
+            }
+
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", data.user.role);
             sessionStorage.setItem("user", JSON.stringify(data.user));
@@ -69,13 +83,12 @@ export const AuthProvider = ({ children }) => {
             setUser(data.user);
             setRole(data.user.role);
 
-            // Redirect based on role
             navigate(data.user.role === "admin" ? "/admin-dashboard" : "/userDashboard/user-dashboard");
 
-            return true;
+            return data.user;
         } catch (err) {
             console.error("Login error:", err);
-            return false;
+            throw err;
         }
     };
 

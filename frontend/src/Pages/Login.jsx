@@ -19,14 +19,12 @@ const Login = () => {
     try {
       const user = await login(email, password);
 
-      if (user && user?.isAdmin !== undefined) {
-        console.log("✅ User Data:", user);
-        navigate(user.isAdmin ? "/admin-dashboard" : "//userDashboard/user-dashboard"); // Fixed user route
+      if (user && user.role) {
+        navigate(user.role === "admin" ? "/admin-dashboard" : "/userDashboard/user-dashboard");
       } else {
         throw new Error("Invalid credentials. Please check your email and password.");
       }
     } catch (err) {
-      console.error("❌ Login error:", err);
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);

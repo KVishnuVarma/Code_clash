@@ -23,7 +23,7 @@ const Users = () => {
                 return;
             }
 
-            const res = await fetch("https://code-clash-s9vq.onrender.com/api/auth/admin/users", {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/admin/users`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -61,7 +61,7 @@ const Users = () => {
                 return;
             }
 
-            const res = await fetch(`https://code-clash-s9vq.onrender.com/api/admin/unsuspend-user/${userId}`, { 
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/unsuspend-user/${userId}`, { 
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

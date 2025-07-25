@@ -30,7 +30,7 @@ const Problems = () => {
   useEffect(() => {
     const fetchProblems = async () => {
       try {
-        const response = await fetch("https://code-clash-s9vq.onrender.com/api/problems/");
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/problems/`);
         if (!response.ok) {
           throw new Error("Failed to fetch problems");
         }
