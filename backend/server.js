@@ -17,7 +17,18 @@ const app = express();
     }
 })();
 
-const allowedOrigins = [process.env.FRONTEND_URL, "http://localhost:5173"];
+const deployedFrontend = "https://codeclashv.vercel.app";
+const localFrontend = "http://localhost:5173";
+
+if (!process.env.FRONTEND_URL) {
+    console.warn("\u26A0\uFE0F FRONTEND_URL is not set in environment variables. Using default frontends for CORS.");
+}
+
+const allowedOrigins = [
+    process.env.FRONTEND_URL || deployedFrontend,
+    deployedFrontend,
+    localFrontend
+];
 
 app.use(cors({
     origin: (origin, callback) => {
