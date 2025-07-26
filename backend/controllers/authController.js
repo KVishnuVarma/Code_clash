@@ -19,7 +19,9 @@ exports.login = async (req, res) => {
     if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(400).json({ message: "Invalid Credentials" });
     }
-    
+    if (user.isSuspended) {
+        return res.status(403).json({ message: "Your account is suspended. Please contact the administrator." });
+    }
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
     res.json({ token, user });
 };

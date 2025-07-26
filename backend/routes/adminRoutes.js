@@ -4,10 +4,26 @@
         getAllUsers, 
         monitorUserActivity, 
         suspendUser, 
-        unsuspendUser 
+        unsuspendUser, 
+        reportViolation,
+        getViolations
     } = require('../controllers/adminController');
 
     const router = express.Router();
+
+    // Public endpoint for reporting violations
+    router.post('/report-violation', reportViolation);
+
+    // Test endpoint for manual violation testing
+    router.post('/test-violation', (req, res) => {
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID required for testing' });
+        }
+        console.log('🧪 TEST VIOLATION TRIGGERED for user:', userId);
+        // Call the reportViolation logic directly
+        reportViolation(req, res);
+    });
 
     router.use(authenticateUser, adminMiddleware);
 
@@ -19,5 +35,7 @@
     router.put('/suspend-user/:userId', suspendUser);
 
     router.put('/unsuspend-user/:userId', unsuspendUser);
+
+    router.get('/violations', getViolations);
 
     module.exports = router;

@@ -1,6 +1,7 @@
 // const Contest = require('../models/Contest'); 
 const Problem = require('../models/Problem'); 
 const User = require('../models/User'); 
+const Violation = require('../models/Violation');
 
 const createContest = async (req, res) => {
     try {
@@ -103,11 +104,48 @@ const unsuspendUser = async (req, res) => {
     }
 };
 
+const reportViolation = async (req, res) => {
+    try {
+        const { userId, examId, violation, timestamp } = req.body;
+        console.log('🚨 VIOLATION REPORTED:', { userId, examId, violation, timestamp });
+        if (!userId || !violation) {
+            console.log('❌ Missing userId or violation data');
+            return res.status(400).json({ error: 'User ID and violation are required.' });
+        }
+        // Store violation in DB
+        await Violation.create({ userId, examId, violation, timestamp });
+        // Suspend the user
+        const user = await User.findById(userId);
+        if (user) {
+            user.isSuspended = true;
+            await user.save();
+            console.log('✅ User suspended successfully. New isSuspended:', user.isSuspended);
+        } else {
+            console.log('❌ User not found with ID:', userId);
+        }
+        res.json({ message: 'Violation reported, stored, and user suspended.' });
+    } catch (error) {
+        console.error('❌ Error in reportViolation:', error);
+        res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
+const getViolations = async (req, res) => {
+    try {
+        const violations = await Violation.find().sort({ timestamp: -1 }).populate('userId', 'name email');
+        res.json({ violations });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
 module.exports = { 
     createContest, 
     uploadProblem, 
     getAllUsers, 
     monitorUserActivity, 
     suspendUser, 
-    unsuspendUser 
+    unsuspendUser, 
+    reportViolation, 
+    getViolations 
 };
