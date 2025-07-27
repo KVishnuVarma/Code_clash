@@ -191,26 +191,50 @@ const ProblemSolve = () => {
 
   // Timer persistence keys
   const timerKey = user && id ? `codeclash_timer_${user._id}_${id}` : null;
+  const sessionKey = user && id ? `codeclash_session_${user._id}_${id}` : null;
 
-  // Timer: use localStorage for persistence
+  // Timer: track active solving sessions
   const [startTime, setStartTime] = useState(() => {
-    if (timerKey) {
+    if (timerKey && sessionKey) {
       const saved = localStorage.getItem(timerKey);
-      return saved ? parseInt(saved, 10) : Date.now();
+      const sessionData = localStorage.getItem(sessionKey);
+      
+      if (saved && sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          // If session is active (not ended), continue from saved time
+          if (session.isActive) {
+            return parseInt(saved, 10);
+          }
+        } catch (e) {
+          console.error('Error parsing session data:', e);
+        }
+      }
     }
     return Date.now();
   });
 
-  useEffect(() => {
-    if (timerKey) {
-      localStorage.setItem(timerKey, startTime.toString());
-    }
-  }, [startTime, timerKey]);
+  // Track if session is active
+  const [isSessionActive, setIsSessionActive] = useState(true);
 
   useEffect(() => {
-    timerInterval.current = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
+    if (timerKey && sessionKey) {
+      localStorage.setItem(timerKey, startTime.toString());
+      localStorage.setItem(sessionKey, JSON.stringify({
+        isActive: isSessionActive,
+        startTime: startTime,
+        lastActive: Date.now()
+      }));
+    }
+  }, [startTime, isSessionActive, timerKey, sessionKey]);
+
+  useEffect(() => {
+    // Only run timer if session is active
+    if (isSessionActive && !isExamTerminated) {
+      timerInterval.current = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    }
 
     // Simulate socket connection
     socketRef.current = {
@@ -227,10 +251,80 @@ const ProblemSolve = () => {
         clearInterval(timerInterval.current);
       }
     };
-  }, [startTime]);
+  }, [startTime, isSessionActive, isExamTerminated]);
+
+  // Handle page visibility changes to pause/resume timer
+  useEffect(() => {
+    const handleTimerVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden - pause session
+        setIsSessionActive(false);
+        if (timerInterval.current) {
+          clearInterval(timerInterval.current);
+        }
+        // Update last active time
+        if (sessionKey) {
+          const sessionData = localStorage.getItem(sessionKey);
+          if (sessionData) {
+            try {
+              const session = JSON.parse(sessionData);
+              session.lastActive = Date.now();
+              session.isActive = false;
+              localStorage.setItem(sessionKey, JSON.stringify(session));
+            } catch (e) {
+              console.error('Error updating session data:', e);
+            }
+          }
+        }
+      } else {
+        // Page is visible - resume session
+        setIsSessionActive(true);
+        if (!isExamTerminated) {
+          timerInterval.current = setInterval(() => {
+            setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+          }, 1000);
+        }
+        // Update session data
+        if (sessionKey) {
+          const sessionData = localStorage.getItem(sessionKey);
+          if (sessionData) {
+            try {
+              const session = JSON.parse(sessionData);
+              session.isActive = true;
+              session.lastActive = Date.now();
+              localStorage.setItem(sessionKey, JSON.stringify(session));
+            } catch (e) {
+              console.error('Error updating session data:', e);
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleTimerVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleTimerVisibilityChange);
+    };
+  }, [startTime, isExamTerminated, sessionKey]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
+      // End session when leaving page
+      if (sessionKey) {
+        const sessionData = localStorage.getItem(sessionKey);
+        if (sessionData) {
+          try {
+            const session = JSON.parse(sessionData);
+            session.isActive = false;
+            session.endTime = Date.now();
+            session.totalTime = session.endTime - session.startTime;
+            localStorage.setItem(sessionKey, JSON.stringify(session));
+          } catch (e) {
+            console.error('Error updating session data:', e);
+          }
+        }
+      }
+      
       if (isDirty) {
         e.preventDefault();
         e.returnValue = "Are you sure you want to leave? Your code will be lost.";
@@ -241,7 +335,7 @@ const ProblemSolve = () => {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isDirty]);
+  }, [isDirty, sessionKey]);
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -260,14 +354,20 @@ const ProblemSolve = () => {
     setActiveTestCase(0);
   };
 
-  const notifyAdmin = (violation) => {
-    if (socketRef.current) {
-      socketRef.current.emit("violation", {
-        userId: user?._id,
-        examId: id,
-        violation,
-        timestamp: new Date().toISOString(),
+  const notifyAdmin = async (violation) => {
+    try {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/report-violation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?._id,
+          examId: id,
+          violation,
+          timestamp: new Date().toISOString(),
+        }),
       });
+    } catch (err) {
+      console.error("Failed to notify admin:", err);
     }
   };
 
@@ -285,8 +385,58 @@ const ProblemSolve = () => {
     }
   };
 
+  // Define handlers outside useEffect so they can be removed
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      setViolations((prev) => ({
+        ...prev,
+        tabChanges: prev.tabChanges + 1,
+      }));
+      setShowWarning(true);
+
+      if (tabChangeTimeout.current) {
+        clearTimeout(tabChangeTimeout.current);
+      }
+
+      tabChangeTimeout.current = setTimeout(() => {
+        setShowWarning(false);
+      }, 3000);
+
+      if (violations.tabChanges >= 2) {
+        terminateExam("excessive_tab_changes");
+      }
+
+      notifyAdmin({
+        type: "tab_change",
+        count: violations.tabChanges + 1,
+      });
+    }
+  };
+
+  const preventCopyPaste = (e) => {
+    e.preventDefault();
+    setViolations((prev) => ({
+      ...prev,
+      copyPaste: prev.copyPaste + 1,
+    }));
+    setShowWarning(true);
+
+    setTimeout(() => setShowWarning(false), 3000);
+
+    if (violations.copyPaste >= 2) {
+      terminateExam("excessive_copy_paste");
+    }
+
+    notifyAdmin({
+      type: "copy_paste_attempt",
+      count: violations.copyPaste + 1,
+    });
+  };
+
   const terminateExam = (reason) => {
     setIsExamTerminated(true);
+    setIsSessionActive(false); // Stop the session
+    
     notifyAdmin({
       type: "exam_terminated",
       reason,
@@ -298,8 +448,38 @@ const ProblemSolve = () => {
       webcamRef.current.stream.getTracks().forEach((track) => track.stop());
     }
 
+    // Stop timer
+    if (timerInterval.current) {
+      clearInterval(timerInterval.current);
+      timerInterval.current = null;
+    }
+
+    // End session and save total time
+    if (sessionKey) {
+      const sessionData = localStorage.getItem(sessionKey);
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          session.isActive = false;
+          session.endTime = Date.now();
+          session.totalTime = session.endTime - session.startTime;
+          session.terminationReason = reason;
+          localStorage.setItem(sessionKey, JSON.stringify(session));
+        } catch (e) {
+          console.error('Error updating session data:', e);
+        }
+      }
+    }
+
+    // Remove all event listeners and intervals
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    document.removeEventListener("copy", preventCopyPaste);
+    document.removeEventListener("paste", preventCopyPaste);
+    if (tabChangeTimeout.current) clearTimeout(tabChangeTimeout.current);
+    if (mobileCheckInterval.current) clearInterval(mobileCheckInterval.current);
+
     setTimeout(() => {
-      navigate("/");
+      navigate("/contact", { replace: true });
     }, 5000);
   };
 
@@ -307,55 +487,6 @@ const ProblemSolve = () => {
     // Mobile detection with continuous checking
     checkMobileDevice();
     mobileCheckInterval.current = setInterval(checkMobileDevice, 5000);
-
-    // Tab change detection
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setViolations((prev) => ({
-          ...prev,
-          tabChanges: prev.tabChanges + 1,
-        }));
-        setShowWarning(true);
-
-        if (tabChangeTimeout.current) {
-          clearTimeout(tabChangeTimeout.current);
-        }
-
-        tabChangeTimeout.current = setTimeout(() => {
-          setShowWarning(false);
-        }, 3000);
-
-        if (violations.tabChanges >= 2) {
-          terminateExam("excessive_tab_changes");
-        }
-
-        notifyAdmin({
-          type: "tab_change",
-          count: violations.tabChanges + 1,
-        });
-      }
-    };
-
-    // Copy/Paste prevention
-    const preventCopyPaste = (e) => {
-      e.preventDefault();
-      setViolations((prev) => ({
-        ...prev,
-        copyPaste: prev.copyPaste + 1,
-      }));
-      setShowWarning(true);
-
-      setTimeout(() => setShowWarning(false), 3000);
-
-      if (violations.copyPaste >= 2) {
-        terminateExam("excessive_copy_paste");
-      }
-
-      notifyAdmin({
-        type: "copy_paste_attempt",
-        count: violations.copyPaste + 1,
-      });
-    };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("copy", preventCopyPaste);

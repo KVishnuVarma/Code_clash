@@ -101,6 +101,7 @@ const unsuspendUser = async (req, res) => {
         await user.save();
 
         // Delete all violations for this user since admin has reviewed and approved
+        // DO NOT delete or modify user contact messages when restoring access
         await Violation.deleteMany({ userId: userId });
 
         res.json({ message: '✅ User unsuspended and violations cleared successfully', user });

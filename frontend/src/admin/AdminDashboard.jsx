@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Chart as ChartJS, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
@@ -97,7 +98,6 @@ const AdminDashboard = () => {
       <h1 className="text-4xl font-extrabold text-white mb-10 text-center drop-shadow-lg">
         Admin Dashboard
       </h1>
-      
       {/* Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
@@ -135,7 +135,6 @@ const AdminDashboard = () => {
             options={lineChartOptions}
           />
         </div>
-
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
           <h2 className="text-xl font-bold mb-4 text-white">Problem Category Analysis</h2>
           <Bar
@@ -165,7 +164,6 @@ const AdminDashboard = () => {
             }}
           />
         </div>
-
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
           <h2 className="text-xl font-bold mb-4 text-white">User Skill Distribution</h2>
           <div className="w-full max-w-md mx-auto">
@@ -206,7 +204,6 @@ const AdminDashboard = () => {
             />
           </div>
         </div>
-
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
           <h2 className="text-xl font-bold mb-4 text-white">Contest Completion Rates</h2>
           <Line

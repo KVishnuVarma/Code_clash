@@ -36,7 +36,15 @@ const Login = () => {
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
 
-        {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-center mt-2">
+            {error.includes("suspended") ? (
+              <>Your account is suspended. Please contact the administrator via the Contact page.</>
+            ) : (
+              error
+            )}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-4">
           {/* Email Input */}
