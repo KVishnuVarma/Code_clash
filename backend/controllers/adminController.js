@@ -95,10 +95,14 @@ const unsuspendUser = async (req, res) => {
             return res.status(404).json({ error: '❌ User not found' });
         }
 
-        user.isSuspended = user.isSuspended ? false : true;
+        // Unsuspend the user
+        user.isSuspended = false;
         await user.save();
 
-        res.json({ message: '✅ User unsuspended successfully', user });
+        // Delete all violations for this user since admin has reviewed and approved
+        await Violation.deleteMany({ userId: userId });
+
+        res.json({ message: '✅ User unsuspended and violations cleared successfully', user });
     } catch (error) {
         res.status(500).json({ error: '❌ Server Error', details: error.message });
     }
@@ -139,6 +143,29 @@ const getViolations = async (req, res) => {
     }
 };
 
+const submitContactMessage = async (req, res) => {
+    try {
+        const { userId, message } = req.body;
+        
+        if (!userId || !message) {
+            return res.status(400).json({ error: 'User ID and message are required.' });
+        }
+
+        // Store the contact message (you can create a ContactMessage model if needed)
+        // For now, we'll just log it and return success
+        console.log('📧 CONTACT MESSAGE FROM SUSPENDED USER:', {
+            userId,
+            message,
+            timestamp: new Date().toISOString()
+        });
+
+        res.json({ message: 'Contact message submitted successfully. Admin will review your case.' });
+    } catch (error) {
+        console.error('❌ Error in submitContactMessage:', error);
+        res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
 module.exports = { 
     createContest, 
     uploadProblem, 
@@ -147,5 +174,6 @@ module.exports = {
     suspendUser, 
     unsuspendUser, 
     reportViolation, 
-    getViolations 
+    getViolations,
+    submitContactMessage
 };

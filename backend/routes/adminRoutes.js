@@ -6,7 +6,8 @@
         suspendUser, 
         unsuspendUser, 
         reportViolation,
-        getViolations
+        getViolations,
+        submitContactMessage
     } = require('../controllers/adminController');
 
     const router = express.Router();
@@ -24,6 +25,9 @@
         // Call the reportViolation logic directly
         reportViolation(req, res);
     });
+
+    // Contact message route
+    router.post('/contact-message', submitContactMessage);
 
     router.use(authenticateUser, adminMiddleware);
 
