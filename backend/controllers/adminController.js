@@ -2,6 +2,7 @@
 const Problem = require('../models/Problem'); 
 const User = require('../models/User'); 
 const Violation = require('../models/Violation');
+const ContactMessage = require('../models/ContactMessage');
 
 const createContest = async (req, res) => {
     try {
@@ -145,23 +146,28 @@ const getViolations = async (req, res) => {
 
 const submitContactMessage = async (req, res) => {
     try {
-        const { userId, message } = req.body;
-        
+        const { userId, message, image } = req.body;
         if (!userId || !message) {
             return res.status(400).json({ error: 'User ID and message are required.' });
         }
-
-        // Store the contact message (you can create a ContactMessage model if needed)
-        // For now, we'll just log it and return success
-        console.log('📧 CONTACT MESSAGE FROM SUSPENDED USER:', {
+        // Save to DB
+        const contactMessage = await ContactMessage.create({
             userId,
             message,
-            timestamp: new Date().toISOString()
+            image
         });
-
-        res.json({ message: 'Contact message submitted successfully. Admin will review your case.' });
+        res.json({ message: 'Contact message submitted successfully. Admin will review your case.', contactMessage });
     } catch (error) {
         console.error('❌ Error in submitContactMessage:', error);
+        res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
+const getContactMessages = async (req, res) => {
+    try {
+        const messages = await ContactMessage.find().sort({ timestamp: -1 }).populate('userId', 'name email');
+        res.json({ messages });
+    } catch (error) {
         res.status(500).json({ error: 'Server error', details: error.message });
     }
 };
@@ -175,5 +181,6 @@ module.exports = {
     unsuspendUser, 
     reportViolation, 
     getViolations,
-    submitContactMessage
+    submitContactMessage,
+    getContactMessages
 };

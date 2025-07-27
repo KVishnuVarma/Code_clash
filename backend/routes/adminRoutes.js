@@ -7,7 +7,8 @@
         unsuspendUser, 
         reportViolation,
         getViolations,
-        submitContactMessage
+        submitContactMessage,
+        getContactMessages
     } = require('../controllers/adminController');
 
     const router = express.Router();
@@ -28,6 +29,8 @@
 
     // Contact message route
     router.post('/contact-message', submitContactMessage);
+    // Fetch all contact messages
+    router.get('/contact-messages', getContactMessages);
 
     router.use(authenticateUser, adminMiddleware);
 
