@@ -102,7 +102,13 @@ router.post('/login', [
 
         res.json({ 
             token, 
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
+            user: { 
+                id: user.id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role,
+                isSuspended: user.isSuspended
+            },
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
         });
     } catch (err) {
@@ -111,11 +117,12 @@ router.post('/login', [
     }
 });
 
+// Get current user data
 router.get('/user', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: 'User not found' });
         }
         res.json(user);
     } catch (err) {
