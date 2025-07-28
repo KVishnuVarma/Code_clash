@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import useAuth from '../hooks/useAuth';
+import { themeService } from '../services/authService';
 
 const themes = {
   zinc: {
@@ -207,25 +209,43 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [currentTheme, setCurrentTheme] = useState(() => {
-    const saved = localStorage.getItem('codeclash-theme');
-    return saved || 'blue';
-  });
-  
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('codeclash-dark-mode');
-    return saved === 'true';
-  });
+  const { user, token } = useAuth();
+  const [currentTheme, setCurrentTheme] = useState('zinc');
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const theme = themes[currentTheme];
 
+  // Load user's theme preferences when user logs in
   useEffect(() => {
-    localStorage.setItem('codeclash-theme', currentTheme);
-  }, [currentTheme]);
+    const loadUserThemePreferences = async () => {
+      if (user && token) {
+        try {
+          setIsLoading(true);
+          const preferences = await themeService.getThemePreferences(token);
+          setCurrentTheme(preferences.theme || 'zinc');
+          setIsDarkMode(preferences.darkMode !== undefined ? preferences.darkMode : true);
+        } catch (error) {
+          console.error('Failed to load theme preferences:', error);
+          // Use defaults if API fails
+          setCurrentTheme('zinc');
+          setIsDarkMode(true);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // No user logged in, use defaults
+        setCurrentTheme('zinc');
+        setIsDarkMode(true);
+        setIsLoading(false);
+      }
+    };
 
+    loadUserThemePreferences();
+  }, [user, token]);
+
+  // Apply dark mode class to document
   useEffect(() => {
-    localStorage.setItem('codeclash-dark-mode', isDarkMode);
-    // Apply dark mode class to document
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -237,12 +257,31 @@ export const ThemeProvider = ({ children }) => {
     return isDarkMode ? theme.darkColors : theme.colors;
   };
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+  const toggleDarkMode = async () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    
+    // Save to backend if user is logged in
+    if (user && token) {
+      try {
+        await themeService.updateThemePreferences(token, currentTheme, newDarkMode);
+      } catch (error) {
+        console.error('Failed to save dark mode preference:', error);
+      }
+    }
   };
 
-  const changeTheme = (themeKey) => {
+  const changeTheme = async (themeKey) => {
     setCurrentTheme(themeKey);
+    
+    // Save to backend if user is logged in
+    if (user && token) {
+      try {
+        await themeService.updateThemePreferences(token, themeKey, isDarkMode);
+      } catch (error) {
+        console.error('Failed to save theme preference:', error);
+      }
+    }
   };
 
   const value = {
@@ -252,7 +291,8 @@ export const ThemeProvider = ({ children }) => {
     themes,
     getThemeColors,
     toggleDarkMode,
-    changeTheme
+    changeTheme,
+    isLoading
   };
 
   return (

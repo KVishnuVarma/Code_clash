@@ -41,7 +41,7 @@ const UserNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-  const { currentTheme, isDarkMode, theme, themes, getThemeColors, toggleDarkMode, changeTheme } = useTheme();
+  const { currentTheme, isDarkMode, theme, themes, getThemeColors, toggleDarkMode, changeTheme, isLoading: themeLoading } = useTheme();
 
   const themeColors = getThemeColors();
 
@@ -64,6 +64,8 @@ const UserNavbar = () => {
   };
 
   const handleThemeChange = async (themeKey) => {
+    if (themeLoading) return; // Don't allow changes while theme is loading
+    
     setIsLoading(true);
     setShowThemeSelector(false);
     
@@ -130,7 +132,7 @@ const UserNavbar = () => {
               <button
                 onClick={() => setShowThemeSelector(!showThemeSelector)}
                 className={`p-2 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${getTextClasses()} ${getHoverClasses()}`}
-                disabled={isLoading}
+                disabled={isLoading || themeLoading}
               >
                 {isLoading ? (
                   <LoadingSpinner theme={theme} />
@@ -172,7 +174,8 @@ const UserNavbar = () => {
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className={`p-2 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${getTextClasses()} ${getHoverClasses()}`}
+              disabled={themeLoading}
+              className={`p-2 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${getTextClasses()} ${getHoverClasses()} ${themeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -192,7 +195,8 @@ const UserNavbar = () => {
             {/* Mobile Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className={`p-2 rounded-lg transition-all duration-300 ${getTextClasses()} ${getHoverClasses()}`}
+              disabled={themeLoading}
+              className={`p-2 rounded-lg transition-all duration-300 ${getTextClasses()} ${getHoverClasses()} ${themeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
