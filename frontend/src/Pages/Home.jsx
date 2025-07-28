@@ -4,12 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaTrophy, FaCode, FaUsers, FaUserShield } from "react-icons/fa";
 import codeclashLogo from "../assets/codeclash.png";
+import { useTheme } from "../context/ThemeContext";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
+    <div className={`min-h-screen ${themeColors.bg} flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden`}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.2 }}

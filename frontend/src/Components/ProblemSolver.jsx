@@ -202,8 +202,31 @@ const ProblemSolve = () => {
       if (saved && sessionData) {
         try {
           const session = JSON.parse(sessionData);
+          // Don't resume if session is completed
+          if (session.isCompleted) {
+            return Date.now(); // Start fresh timer
+          }
+          // If session exists but was marked inactive due to logout, resume it
+          if (!session.isActive && session.logoutTime) {
+            // Calculate the time that passed while user was logged out
+            const logoutDuration = Date.now() - session.logoutTime;
+            // Adjust the start time to account for the logout period
+            const adjustedStartTime = session.startTime + logoutDuration;
+            
+            // Update the session to be active again
+            const updatedSession = {
+              ...session,
+              isActive: true,
+              lastActive: Date.now(),
+              logoutTime: null // Clear logout time
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(updatedSession));
+            localStorage.setItem(timerKey, adjustedStartTime.toString());
+            
+            return adjustedStartTime;
+          }
           // If session is active (not ended), continue from saved time
-          if (session.isActive) {
+          else if (session.isActive) {
             return parseInt(saved, 10);
           }
         } catch (e) {
@@ -216,6 +239,43 @@ const ProblemSolve = () => {
 
   // Track if session is active
   const [isSessionActive, setIsSessionActive] = useState(true);
+
+  // Handle timer resumption when user logs back in
+  useEffect(() => {
+    if (timerKey && sessionKey && user) {
+      const sessionData = localStorage.getItem(sessionKey);
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          // Don't resume if session is completed
+          if (session.isCompleted) {
+            return;
+          }
+          // If session was inactive due to logout, resume it
+          if (!session.isActive && session.logoutTime) {
+            const logoutDuration = Date.now() - session.logoutTime;
+            const adjustedStartTime = session.startTime + logoutDuration;
+            
+            // Update session to be active again
+            const updatedSession = {
+              ...session,
+              isActive: true,
+              lastActive: Date.now(),
+              logoutTime: null
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(updatedSession));
+            localStorage.setItem(timerKey, adjustedStartTime.toString());
+            
+            // Update the start time state
+            setStartTime(adjustedStartTime);
+            setIsSessionActive(true);
+          }
+        } catch (e) {
+          console.error('Error resuming timer session:', e);
+        }
+      }
+    }
+  }, [user, timerKey, sessionKey]);
 
   useEffect(() => {
     if (timerKey && sessionKey) {
@@ -345,6 +405,46 @@ const ProblemSolve = () => {
       .toString()
       .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
+
+  // Get timer status for display
+  const getTimerStatus = () => {
+    if (!sessionKey) return "Not Started";
+    
+    const sessionData = localStorage.getItem(sessionKey);
+    if (!sessionData) return "Not Started";
+    
+    try {
+      const session = JSON.parse(sessionData);
+      if (session.isCompleted) return "Completed";
+      if (session.isActive) return "Active";
+      if (session.logoutTime) return "Paused (Logged Out)";
+      return "Paused";
+    } catch (e) {
+      return "Error";
+    }
+  };
+
+  // Debug function to log timer session info (for testing)
+  const debugTimerSession = () => {
+    if (sessionKey) {
+      const sessionData = localStorage.getItem(sessionKey);
+      console.log('Timer Session Debug:', {
+        sessionKey,
+        sessionData: sessionData ? JSON.parse(sessionData) : null,
+        elapsedTime,
+        isSessionActive,
+        startTime: new Date(startTime).toISOString()
+      });
+    }
+  };
+
+  // Log timer info on mount for debugging
+  useEffect(() => {
+    if (timerKey && sessionKey) {
+      debugTimerSession();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerKey, sessionKey]);
 
   const handleLanguageChange = (language) => {
     setSelectedLanguage(language);
@@ -570,6 +670,24 @@ const ProblemSolve = () => {
             timerInterval.current = null;
           }
           setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+          
+          // Mark session as completed so it won't resume on future logins
+          if (sessionKey) {
+            const sessionData = localStorage.getItem(sessionKey);
+            if (sessionData) {
+              try {
+                const session = JSON.parse(sessionData);
+                session.isActive = false;
+                session.isCompleted = true;
+                session.completionTime = Date.now();
+                session.totalTime = Math.floor((Date.now() - startTime) / 1000);
+                localStorage.setItem(sessionKey, JSON.stringify(session));
+              } catch (e) {
+                console.error('Error updating session data on completion:', e);
+              }
+            }
+          }
+          
           if (user?._id && id) {
             getUserProblemSubmissions(user._id, id).then(setAllSubmissions);
           }
@@ -724,17 +842,34 @@ const ProblemSolve = () => {
         setCode(selectedLanguage.template || "");
         setIsDirty(true);
       }
-      if (timerKey) {
+      if (timerKey && sessionKey) {
         localStorage.removeItem(timerKey);
+        localStorage.removeItem(sessionKey);
         const now = Date.now();
         setStartTime(now);
         setElapsedTime(0);
+        setIsSessionActive(true);
       }
     }
   };
 
   // Custom back button handler
   const handleBack = () => {
+    // Pause the timer session when navigating away
+    if (sessionKey) {
+      const sessionData = localStorage.getItem(sessionKey);
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          session.isActive = false;
+          session.lastActive = Date.now();
+          localStorage.setItem(sessionKey, JSON.stringify(session));
+        } catch (e) {
+          console.error('Error updating session data on navigation:', e);
+        }
+      }
+    }
+    
     if (isDirty) {
       setShowNavConfirm(true);
     } else {
@@ -863,6 +998,14 @@ const ProblemSolve = () => {
             <div className="flex items-center gap-2 text-gray-600">
               <Timer size={18} />
               <span className="font-mono">{formatTime(elapsedTime)}</span>
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                getTimerStatus() === "Active" ? "bg-green-100 text-green-700" :
+                getTimerStatus() === "Paused" || getTimerStatus() === "Paused (Logged Out)" ? "bg-yellow-100 text-yellow-700" :
+                getTimerStatus() === "Completed" ? "bg-blue-100 text-blue-700" :
+                "bg-gray-100 text-gray-700"
+              }`}>
+                {getTimerStatus()}
+              </span>
             </div>
             {/* Participants Button */}
             <div className="relative flex items-center">

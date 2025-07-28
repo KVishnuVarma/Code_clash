@@ -10,15 +10,17 @@ import {
   List,
   LogOut
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const Sidebar = ({ onExpandChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    navigate("/");
+    logout(); // Use AuthContext logout to properly handle timer cleanup
   };
 
   const handleMouseEnter = () => {

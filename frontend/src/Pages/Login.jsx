@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +11,8 @@ const Login = () => {
 
   const { login } = useAuth(); // Ensure AuthContext is correctly implemented
   const navigate = useNavigate();
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,9 +35,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
+    <div className={`min-h-screen flex items-center justify-center ${themeColors.bg}`}>
+      <div className={`${themeColors.bg} p-8 rounded-lg shadow-lg w-96 border ${themeColors.border}`}>
+        <h2 className={`text-2xl font-bold text-center ${themeColors.text}`}>Login</h2>
 
         {error && (
           <p className="text-red-500 text-center mt-2">
@@ -49,10 +52,10 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="mt-4">
           {/* Email Input */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-medium">Email</label>
+            <label className={`block ${themeColors.text} font-medium`}>Email</label>
             <input
               type="email"
-              className="w-full p-2 mt-1 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className={`w-full p-2 mt-1 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none ${themeColors.bg} ${themeColors.text}`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -61,10 +64,10 @@ const Login = () => {
 
           {/* Password Input */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-medium">Password</label>
+            <label className={`block ${themeColors.text} font-medium`}>Password</label>
             <input
               type="password"
-              className="w-full p-2 mt-1 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className={`w-full p-2 mt-1 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none ${themeColors.bg} ${themeColors.text}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -86,7 +89,7 @@ const Login = () => {
         </form>
 
         {/* Register Link */}
-        <p className="text-center text-gray-600 mt-4">
+        <p className={`text-center ${themeColors.textSecondary} mt-4`}>
           Don't have an account?{" "}
           <button
             onClick={() => navigate("/register")}

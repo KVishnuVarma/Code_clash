@@ -20,6 +20,7 @@ import Leader from "./Pages/LeaderBoard";
 import Problem from "./Pages/Problems";
 import UserDashboard from "./Pages/UserDashboard";
 import useAuth from "./hooks/useAuth";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // Importing the new Problem pages
 import ProblemView from "./Components/ProblemView";
@@ -47,7 +48,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <ThemeProvider>
       {(!isProblemSolver && user?.role === "admin") && <Navbar />}
       
       <Routes>
@@ -173,6 +174,6 @@ export default function App() {
       </Routes>
       
       {!isProblemSolver && <Footer />}
-    </>
+    </ThemeProvider>
   );
 }

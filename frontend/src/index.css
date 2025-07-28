@@ -1,2 +1,12 @@
-@import 'tailwindcss'
+@import 'tailwindcss';
 
+/* Dark mode support */
+@layer base {
+  html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}

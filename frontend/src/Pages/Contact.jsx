@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const Contact = () => {
   const [message, setMessage] = useState("");
@@ -9,6 +10,8 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
 
   // Show loading while auth is being determined
   if (loading) {
@@ -67,9 +70,9 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Contact Admin</h2>
+    <div className={`min-h-screen flex items-center justify-center ${themeColors.bg}`}>
+      <div className={`${themeColors.bg} p-8 rounded-lg shadow-lg w-full max-w-md border ${themeColors.border}`}>
+        <h2 className={`text-2xl font-bold text-center ${themeColors.text} mb-4`}>Contact Admin</h2>
         <p className="text-red-600 text-center mb-4 font-semibold">
           Your account is suspended. Please contact the administrator below for help.
         </p>
@@ -78,7 +81,7 @@ const Contact = () => {
         ) : (
           <form onSubmit={handleSubmit}>
             <textarea
-              className="w-full p-2 border rounded-lg mb-4"
+              className={`w-full p-2 border ${themeColors.border} rounded-lg mb-4 ${themeColors.bg} ${themeColors.text}`}
               rows={5}
               placeholder="Describe your issue or request..."
               value={message}

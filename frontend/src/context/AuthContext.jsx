@@ -76,6 +76,7 @@ export const AuthProvider = ({ children }) => {
                 }
             };
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, user, navigate, location.pathname]);
 
     // Fetch user details from backend
@@ -93,6 +94,7 @@ export const AuthProvider = ({ children }) => {
             setRole(normalized.role);
             sessionStorage.setItem("user", JSON.stringify(normalized));
             sessionStorage.setItem("role", normalized.role);
+        // eslint-disable-next-line no-unused-vars
         } catch (err) {
             logout();
         } finally {
@@ -145,6 +147,38 @@ export const AuthProvider = ({ children }) => {
         // Clear interval if running
         if (statusCheckInterval.current) {
             clearInterval(statusCheckInterval.current);
+        }
+        
+        // Clean up timer sessions for all problems when user logs out
+        if (user && user._id) {
+            // Get all timer-related keys for this user
+            const timerKeys = [];
+            const sessionKeys = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(`codeclash_timer_${user._id}_`)) {
+                    timerKeys.push(key);
+                }
+                if (key && key.startsWith(`codeclash_session_${user._id}_`)) {
+                    sessionKeys.push(key);
+                }
+            }
+            
+            // Mark all active sessions as inactive
+            sessionKeys.forEach(key => {
+                try {
+                    const sessionData = localStorage.getItem(key);
+                    if (sessionData) {
+                        const session = JSON.parse(sessionData);
+                        session.isActive = false;
+                        session.logoutTime = Date.now();
+                        localStorage.setItem(key, JSON.stringify(session));
+                    }
+                } catch (e) {
+                    console.error('Error updating session data on logout:', e);
+                }
+            });
         }
         
         sessionStorage.clear(); // Clear session storage

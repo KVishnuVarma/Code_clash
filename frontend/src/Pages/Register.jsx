@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,18 +54,18 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700">
-      <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg relative">
+    <div className={`flex min-h-screen items-center justify-center ${themeColors.bg}`}>
+      <div className={`w-full max-w-md p-8 ${themeColors.bg} shadow-lg rounded-lg relative border ${themeColors.border}`}>
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
+          <div className={`absolute inset-0 flex items-center justify-center ${themeColors.bg} bg-opacity-80`}>
             <div className="flex space-x-2">
-              <div className="w-3 h-3 bg-gray-700 rounded-full animate-bounce"></div>
-              <div className="w-3 h-3 bg-gray-700 rounded-full animate-bounce delay-200"></div>
-              <div className="w-3 h-3 bg-gray-700 rounded-full animate-bounce delay-400"></div>
+              <div className={`w-3 h-3 ${themeColors.text} rounded-full animate-bounce`}></div>
+              <div className={`w-3 h-3 ${themeColors.text} rounded-full animate-bounce delay-200`}></div>
+              <div className={`w-3 h-3 ${themeColors.text} rounded-full animate-bounce delay-400`}></div>
             </div>
           </div>
         )}
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Register</h2>
+        <h2 className={`text-2xl font-bold text-center ${themeColors.text} mb-6`}>Register</h2>
         {error && <p className="text-red-500 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -72,7 +75,7 @@ const Register = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+            className={`w-full p-3 border ${themeColors.border} rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${themeColors.bg} ${themeColors.text}`}
           />
           <input
             type="email"
@@ -81,7 +84,7 @@ const Register = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+            className={`w-full p-3 border ${themeColors.border} rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${themeColors.bg} ${themeColors.text}`}
           />
           <input
             type="password"
@@ -90,7 +93,7 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+            className={`w-full p-3 border ${themeColors.border} rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${themeColors.bg} ${themeColors.text}`}
           />
           <button
             type="submit"
@@ -108,8 +111,8 @@ const Register = () => {
           >
           </button>
         </div>
-        <p className="text-center text-gray-400 mt-4">
-          Already have an account? <a href="/login" className="text-gray-600 hover:text-black">Login here</a>
+        <p className={`text-center ${themeColors.textSecondary} mt-4`}>
+          Already have an account? <a href="/login" className={`${themeColors.text} hover:underline`}>Login here</a>
         </p>
       </div>
     </div>
