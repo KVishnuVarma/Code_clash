@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema({
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     isSuspended: { type: Boolean, default: false },
     activityLog: [{ type: String, default: [] }],
+    theme: { type: String, default: 'zinc' },
+    darkMode: { type: Boolean, default: true },
     problemScores: [{
         problemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Problem' },
         score: { type: Number, default: 0 },

@@ -61,7 +61,14 @@ router.post('/register', [
 
         res.json({ 
             token, 
-            user: { id: user.id, name, email, role: user.role },
+            user: { 
+                id: user.id, 
+                name, 
+                email, 
+                role: user.role,
+                theme: user.theme,
+                darkMode: user.darkMode
+            },
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
         });
     } catch (err) {
@@ -107,7 +114,9 @@ router.post('/login', [
                 name: user.name, 
                 email: user.email, 
                 role: user.role,
-                isSuspended: user.isSuspended
+                isSuspended: user.isSuspended,
+                theme: user.theme,
+                darkMode: user.darkMode
             },
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
         });
@@ -184,7 +193,55 @@ router.get("/api/leaderboard", async (req, res) => {
     }
 });
 
+// Theme preference endpoints
+router.put('/theme', authMiddleware, async (req, res) => {
+    try {
+        const { theme, darkMode } = req.body;
+        
+        if (theme && !['zinc', 'slate', 'stone', 'blue', 'emerald', 'purple'].includes(theme)) {
+            return res.status(400).json({ message: 'Invalid theme' });
+        }
+        
+        if (darkMode !== undefined && typeof darkMode !== 'boolean') {
+            return res.status(400).json({ message: 'Invalid darkMode value' });
+        }
 
-  
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (theme !== undefined) user.theme = theme;
+        if (darkMode !== undefined) user.darkMode = darkMode;
+        
+        await user.save();
+
+        res.json({ 
+            message: 'Theme preferences updated',
+            theme: user.theme,
+            darkMode: user.darkMode
+        });
+    } catch (err) {
+        console.error("Error updating theme preferences:", err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+router.get('/theme', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('theme darkMode');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        res.json({
+            theme: user.theme,
+            darkMode: user.darkMode
+        });
+    } catch (err) {
+        console.error("Error fetching theme preferences:", err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
 
 module.exports = router;
