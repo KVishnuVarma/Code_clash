@@ -59,20 +59,8 @@ const Problems = () => {
     const matchesDifficulty = selectedDifficulty === "all" || 
                              problem.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
     
-    // Debug logging
-    if (selectedDifficulty !== "all") {
-      console.log(`Problem: ${problem.title}, Difficulty: ${problem.difficulty}, Filter: ${selectedDifficulty}, Matches: ${matchesDifficulty}`);
-    }
-    
     return matchesSearch && matchesDifficulty;
   });
-
-  // Debug logging for filter changes
-  useEffect(() => {
-    console.log("Filter changed - Search:", searchTerm, "Difficulty:", selectedDifficulty);
-    console.log("Total problems:", problems.length);
-    console.log("Filtered problems:", filteredProblems.length);
-  }, [searchTerm, selectedDifficulty, problems.length, filteredProblems.length]);
 
   useEffect(() => {
     const fetchProblems = async () => {
@@ -82,10 +70,8 @@ const Problems = () => {
           throw new Error("Failed to fetch problems");
         }
         const data = await response.json();
-        console.log("Fetched problems:", data);
         setProblems(data);
       } catch (err) {
-        console.error("Error fetching problems:", err);
         setError(err.message);
       } finally {
         setLoading(false);
