@@ -27,6 +27,79 @@ const adminMiddleware = (req, res, next) => {
     next();
 };
 
+// Google OAuth authentication
+router.post('/google', async (req, res) => {
+    try {
+        const { credential } = req.body;
+        
+        if (!credential) {
+            return res.status(400).json({ message: 'Google credential is required' });
+        }
+
+        // Decode the JWT token from Google
+        const decoded = jwt.decode(credential);
+        
+        if (!decoded) {
+            return res.status(400).json({ message: 'Invalid Google credential' });
+        }
+
+        const { email, name, picture, sub: googleId } = decoded;
+
+        // Check if user already exists
+        let user = await User.findOne({ email });
+
+        if (user) {
+            // User exists, check if suspended
+            if (user.isSuspended) {
+                return res.status(403).json({ message: "Your account is suspended. Contact admin." });
+            }
+
+            // Update user's Google ID if not set
+            if (!user.googleId) {
+                user.googleId = googleId;
+                await user.save();
+            }
+        } else {
+            // Create new user
+            user = new User({
+                name,
+                email,
+                googleId,
+                role: 'user',
+                activityLog: [],
+                isSuspended: false,
+                profilePicture: picture
+            });
+            await user.save();
+        }
+
+        // Log the activity
+        user.activityLog.push(`User logged in with Google at ${new Date().toISOString()}`);
+        await user.save();
+
+        // Generate JWT token
+        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ 
+            token, 
+            user: { 
+                id: user.id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role,
+                isSuspended: user.isSuspended,
+                theme: user.theme,
+                darkMode: user.darkMode,
+                profilePicture: user.profilePicture
+            },
+            redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
+        });
+    } catch (err) {
+        console.error("Error in Google authentication:", err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 router.post('/register', [
     check('name', 'Name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),

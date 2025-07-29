@@ -8,6 +8,8 @@ const UserSchema = new mongoose.Schema({
     state: String,
     country: String,
     password: String,
+    googleId: String, // Google OAuth ID
+    profilePicture: String, // Google profile picture URL
     points: { type: Number, default: 0 },
     solvedProblems: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Problem', default: [] }],
     role: { type: String, enum: ['user', 'admin'], default: 'user' },

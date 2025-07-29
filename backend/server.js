@@ -28,30 +28,43 @@ const allowedOrigins = [
     process.env.FRONTEND_URL || deployedFrontend,
     deployedFrontend,
     localFrontend,
-    "https://codeclashv.vercel.app" // Added deployed frontend URL
+    "http://localhost:3000", // Additional local development port
+    "https://codeclashv.vercel.app", // Added deployed frontend URL
+    "https://accounts.google.com", // Allow Google OAuth
+    "https://oauth2.googleapis.com" // Allow Google OAuth endpoints
 ];
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.warn(`⚠️ CORS blocked origin: ${origin}`);
             callback(new Error("Not allowed by CORS"));
         }
     },
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 }));
 
 // Handle preflight requests for all routes
 app.options("*", cors({
     origin: (origin, callback) => {
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             callback(new Error("Not allowed by CORS"));
         }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 }));
 
 app.use(express.json());
