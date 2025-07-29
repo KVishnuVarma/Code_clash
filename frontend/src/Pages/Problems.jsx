@@ -26,11 +26,31 @@ const Problems = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [selectedTopics, setSelectedTopics] = useState([]);
+  const [showTopicsFilter, setShowTopicsFilter] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState([]);
   const { getThemeColors } = useTheme();
   const themeColors = getThemeColors();
+
+  // Available topics for filtering
+  const availableTopics = [
+    "Array", "String", "Hash Table", "Dynamic Programming", "Math", "Sorting",
+    "Greedy", "Depth-First Search", "Binary Search", "Database", "Matrix", "Tree",
+    "Breadth-First Search", "Bit Manipulation", "Two Pointers", "Prefix Sum",
+    "Heap (Priority Queue)", "Simulation", "Binary Tree", "Graph", "Stack", "Counting",
+    "Sliding Window", "Design", "Enumeration", "Backtracking", "Union Find", "Linked List",
+    "Number Theory", "Ordered Set", "Monotonic Stack", "Segment Tree", "Trie", "Combinatorics",
+    "Bitmask", "Queue", "Recursion", "Divide and Conquer", "Geometry", "Binary Indexed Tree",
+    "Memoization", "Hash Function", "Binary Search Tree", "Shortest Path", "String Matching",
+    "Topological Sort", "Rolling Hash", "Game Theory", "Interactive", "Data Stream",
+    "Monotonic Queue", "Brainteaser", "Doubly-Linked List", "Randomized", "Merge Sort",
+    "Counting Sort", "Iterator", "Concurrency", "Probability and Statistics", "Quickselect",
+    "Suffix Array", "Line Sweep", "Minimum Spanning Tree", "Bucket Sort", "Shell",
+    "Reservoir Sampling", "Strongly Connected Component", "Eulerian Circuit", "Radix Sort",
+    "Rejection Sampling", "Biconnected Component"
+  ];
 
   const getSubmissionStatus = (problemId) => {
     const submission = submissions.find(s => s.problemId === problemId);
@@ -54,8 +74,10 @@ const Problems = () => {
                          problem.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDifficulty = selectedDifficulty === "all" || 
                              problem.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
+    const matchesTopics = selectedTopics.length === 0 || 
+                         (problem.topics && problem.topics.some(topic => selectedTopics.includes(topic)));
     
-    return matchesSearch && matchesDifficulty;
+    return matchesSearch && matchesDifficulty && matchesTopics;
   });
 
   // Animation variants
@@ -147,6 +169,20 @@ const Problems = () => {
     fetchUserData();
   }, [user]);
 
+  // Close topics dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showTopicsFilter && !event.target.closest('.topics-filter-container')) {
+        setShowTopicsFilter(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showTopicsFilter]);
+
   if (loading) {
     return (
       <div className={`min-h-screen ${themeColors.bg} flex items-center justify-center`}>
@@ -228,10 +264,10 @@ const Problems = () => {
         {/* Search and Filter */}
         <motion.div variants={itemVariants} className="mb-6">
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
-            {/* Search Bar */}
+            {/* Search Bar - First */}
             <motion.div
               whileFocus={{ scale: 1.02 }}
-              className="flex-1 min-w-0"
+              className="flex-1 min-w-0 lg:max-w-md"
             >
               <div className="relative">
                 <motion.div
@@ -239,63 +275,129 @@ const Problems = () => {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${themeColors.textSecondary} w-5 h-5`} />
+                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5`} />
                 </motion.div>
                 <input
                   type="text"
-                  placeholder="Search problems..."
+                  placeholder="search problems..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 rounded-xl border ${themeColors.border} ${themeColors.accentBg} ${themeColors.text} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm hover:shadow-md text-base`} // Ensures consistent font size
+                  className={`w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md text-base`}
                 />
               </div>
             </motion.div>
-            
-            {/* Filter Controls */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-fit">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl border ${themeColors.border} ${themeColors.accentBg}`}
+
+            {/* All Difficulties Filter - Second */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-500 bg-gray-700 dark:bg-gray-800 text-gray-300 dark:text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 lg:w-auto`}
+            >
+              <Filter className={`text-gray-400 w-5 h-5`} />
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                className={`bg-transparent text-gray-300 dark:text-gray-300 focus:outline-none cursor-pointer text-base`}
               >
-                <Filter className={`${themeColors.textSecondary} w-5 h-5`} />
-                <select
-                  value={selectedDifficulty}
-                  onChange={(e) => setSelectedDifficulty(e.target.value)}
-                  className={`bg-transparent ${themeColors.text} focus:outline-none cursor-pointer text-base`}
+                <option value="all">All Difficulties</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </motion.div>
+
+            {/* Skill Tree Filter - Third */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="relative topics-filter-container lg:w-auto"
+            >
+              <button
+                onClick={() => setShowTopicsFilter(!showTopicsFilter)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-500 bg-gray-700 dark:bg-gray-800 text-gray-300 dark:text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 w-full lg:w-auto`}
+              >
+                <Filter className={`text-gray-400 w-5 h-5`} />
+                <span className="text-base">
+                  {selectedTopics.length === 0 ? "Skill Tree" : `${selectedTopics.length} Topics`}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-400 transition-transform ${showTopicsFilter ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <option value="all">All Difficulties</option>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </motion.div>
-              
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Topics Dropdown */}
               <AnimatePresence>
-                {(searchTerm || selectedDifficulty !== "all") && (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSelectedDifficulty("all");
-                    }}
-                    className={`flex items-center gap-2 px-4 py-3 text-sm rounded-xl border ${themeColors.border} ${themeColors.accentBg} ${themeColors.text} hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 hover:text-red-600 transition-all duration-200`}
+                {showTopicsFilter && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className={`absolute top-full left-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-lg z-50 p-4`}
                   >
-                    <X className="w-4 h-4" />
-                    Clear Filters
-                  </motion.button>
+                    <div className="grid grid-cols-2 gap-2">
+                      {availableTopics.map((topic) => (
+                        <label key={topic} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedTopics.includes(topic)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTopics([...selectedTopics, topic]);
+                              } else {
+                                setSelectedTopics(selectedTopics.filter(t => t !== topic));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className={`text-sm text-gray-900 dark:text-white`}>{topic}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {selectedTopics.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <button
+                          onClick={() => setSelectedTopics([])}
+                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                        >
+                          Clear Skill Tree
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
+            
+            {/* Clear Filters Button */}
+            <AnimatePresence>
+              {(searchTerm || selectedDifficulty !== "all" || selectedTopics.length > 0) && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedDifficulty("all");
+                    setSelectedTopics([]);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm rounded-xl border border-red-300 dark:border-red-600 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 lg:w-auto`}
+                >
+                  <X className="w-4 h-4" />
+                  Clear Filters
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
 
         {/* Filter Summary */}
         <AnimatePresence>
-          {(searchTerm || selectedDifficulty !== "all") && (
+          {(searchTerm || selectedDifficulty !== "all" || selectedTopics.length > 0) && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -325,6 +427,15 @@ const Problems = () => {
                     Difficulty: {selectedDifficulty}
                   </motion.span>
                 )}
+                {selectedTopics.length > 0 && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-xs font-medium"
+                  >
+                    Skill Tree: {selectedTopics.map(topic => topic).join(', ')}
+                  </motion.span>
+                )}
                 <span className="text-gray-500 flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
                   ({filteredProblems.length} of {problems.length} problems)
@@ -347,7 +458,8 @@ const Problems = () => {
                 <div className={`grid grid-cols-12 gap-4 text-sm font-medium ${themeColors.text} items-center`}>
                   <div className="col-span-3 truncate">Title</div>
                   <div className="col-span-1 text-center">Difficulty</div>
-                  <div className="col-span-2 text-center">Success Rate</div>
+                  <div className="col-span-1 text-center">Topics</div>
+                  <div className="col-span-1 text-center">Success Rate</div>
                   <div className="col-span-1 text-center">Status</div>
                   <div className="col-span-1 text-center">Time Limit</div>
                   <div className="col-span-2 text-center">Time Taken</div>
@@ -394,8 +506,19 @@ const Problems = () => {
                               {problem.difficulty}
                             </motion.span>
                           </div>
+                          {/* Topics */}
+                          <div className="col-span-1 flex justify-center">
+                            <motion.span
+                              whileHover={{ color: "#3B82F6" }}
+                              className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm whitespace-nowrap ${
+                                problem.topics && problem.topics.length > 0 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'
+                              }`}
+                            >
+                              {problem.topics && problem.topics.length > 0 ? problem.topics.map(topic => topic).join(', ') : 'N/A'}
+                            </motion.span>
+                          </div>
                           {/* Success Rate */}
-                          <div className="col-span-2 flex items-center justify-center gap-2">
+                          <div className="col-span-1 flex items-center justify-center gap-2">
                             <BarChart2 className={`w-4 h-4 ${themeColors.textSecondary}`} />
                             <span className={themeColors.text}>
                               {isSolved ? '100%' : '0%'}
@@ -506,6 +629,25 @@ const Problems = () => {
                           {problem.difficulty}
                         </motion.span>
                       </div>
+
+                      {/* Topics */}
+                      {problem.topics && problem.topics.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {problem.topics.slice(0, 3).map((topic) => (
+                            <span
+                              key={topic}
+                              className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium"
+                            >
+                              {topic}
+                            </span>
+                          ))}
+                          {problem.topics.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-medium">
+                              +{problem.topics.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-4">
@@ -634,6 +776,16 @@ const Problems = () => {
                   className={`text-sm ${themeColors.textSecondary}`}
                 >
                   Difficulty filter: <span className="font-medium">{selectedDifficulty}</span>
+                </motion.p>
+              )}
+              {selectedTopics.length > 0 && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className={`text-sm ${themeColors.textSecondary}`}
+                >
+                  Skill Tree filter: <span className="font-medium">{selectedTopics.map(topic => topic).join(', ')}</span>
                 </motion.p>
               )}
             </motion.div>

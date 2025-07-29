@@ -132,6 +132,27 @@ const ProblemCard = ({ problem, onEdit, onDelete, difficultyColor }) => {
         {problem.description}
       </p>
 
+      {/* Topics Display */}
+      {problem.topics && problem.topics.length > 0 && (
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-1">
+            {problem.topics.slice(0, 3).map((topic) => (
+              <span
+                key={topic}
+                className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium"
+              >
+                {topic}
+              </span>
+            ))}
+            {problem.topics.length > 3 && (
+              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-medium">
+                +{problem.topics.length - 3} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mt-4">
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {problem.testCases.length} test cases
@@ -163,7 +184,26 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
     difficulty: "Easy",
     testCases: [{ input: "", output: "", explanation: "" }],
     languages: ["Python"],
+    topics: [],
   });
+
+  // Available topics for skill tree
+  const availableTopics = [
+    "Array", "String", "Hash Table", "Dynamic Programming", "Math", "Sorting",
+    "Greedy", "Depth-First Search", "Binary Search", "Database", "Matrix", "Tree",
+    "Breadth-First Search", "Bit Manipulation", "Two Pointers", "Prefix Sum",
+    "Heap (Priority Queue)", "Simulation", "Binary Tree", "Graph", "Stack", "Counting",
+    "Sliding Window", "Design", "Enumeration", "Backtracking", "Union Find", "Linked List",
+    "Number Theory", "Ordered Set", "Monotonic Stack", "Segment Tree", "Trie", "Combinatorics",
+    "Bitmask", "Queue", "Recursion", "Divide and Conquer", "Geometry", "Binary Indexed Tree",
+    "Memoization", "Hash Function", "Binary Search Tree", "Shortest Path", "String Matching",
+    "Topological Sort", "Rolling Hash", "Game Theory", "Interactive", "Data Stream",
+    "Monotonic Queue", "Brainteaser", "Doubly-Linked List", "Randomized", "Merge Sort",
+    "Counting Sort", "Iterator", "Concurrency", "Probability and Statistics", "Quickselect",
+    "Suffix Array", "Line Sweep", "Minimum Spanning Tree", "Bucket Sort", "Shell",
+    "Reservoir Sampling", "Strongly Connected Component", "Eulerian Circuit", "Radix Sort",
+    "Rejection Sampling", "Biconnected Component"
+  ];
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -182,6 +222,7 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
         difficulty: "Easy",
         testCases: [{ input: "", output: "", explanation: "" }],
         languages: ["Python"],
+        topics: [],
       });
     }
   }, [problem]);
@@ -263,6 +304,52 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
                 <option value="Medium">Medium</option>
                 <option value="Hard">Hard</option>
               </select>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">
+                  Topics (Skill Tree)
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                  {availableTopics.map((topic) => (
+                    <label key={topic} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.topics?.includes(topic) || false}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              topics: [...(formData.topics || []), topic],
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              topics: (formData.topics || []).filter((t) => t !== topic),
+                            });
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm dark:text-white">{topic}</span>
+                    </label>
+                  ))}
+                </div>
+                {formData.topics?.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Selected topics:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.topics.map((topic) => (
+                        <span
+                          key={topic}
+                          className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs"
+                        >
+                          {topic}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-4 dark:text-white">

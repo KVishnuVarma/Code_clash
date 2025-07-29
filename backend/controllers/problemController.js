@@ -3,7 +3,7 @@ const Problem = require("../models/Problem");
 // Create a new problem
 exports.createProblem = async (req, res) => {
     try {
-        const { title, description, difficulty, testCases, languages } = req.body;
+        const { title, description, difficulty, testCases, languages, topics } = req.body;
         // testCases may now include explanation for each test case
         const newProblem = new Problem({
             title,
@@ -11,6 +11,7 @@ exports.createProblem = async (req, res) => {
             difficulty,
             testCases, // testCases: [{input, output, explanation}]
             languages,
+            topics, // topics: ["Array", "Breadth-First Search", etc.]
             totalParticipants: 0
         });
 
