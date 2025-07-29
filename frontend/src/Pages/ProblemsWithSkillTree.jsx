@@ -19,38 +19,20 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getUserSubmissions } from "../services/problemService";
 import UserNavbar from "../Components/UserNavbar";
+import SkillTree from "../Components/SkillTree";
 
-const Problems = () => {
+const ProblemsWithSkillTree = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
-  const [selectedTopics, setSelectedTopics] = useState([]);
-  const [showTopicsFilter, setShowTopicsFilter] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState([]);
   const { getThemeColors } = useTheme();
   const themeColors = getThemeColors();
-
-  // Available topics for filtering
-  const availableTopics = [
-    "Array", "String", "Hash Table", "Dynamic Programming", "Math", "Sorting",
-    "Greedy", "Depth-First Search", "Binary Search", "Database", "Matrix", "Tree",
-    "Breadth-First Search", "Bit Manipulation", "Two Pointers", "Prefix Sum",
-    "Heap (Priority Queue)", "Simulation", "Binary Tree", "Graph", "Stack", "Counting",
-    "Sliding Window", "Design", "Enumeration", "Backtracking", "Union Find", "Linked List",
-    "Number Theory", "Ordered Set", "Monotonic Stack", "Segment Tree", "Trie", "Combinatorics",
-    "Bitmask", "Queue", "Recursion", "Divide and Conquer", "Geometry", "Binary Indexed Tree",
-    "Memoization", "Hash Function", "Binary Search Tree", "Shortest Path", "String Matching",
-    "Topological Sort", "Rolling Hash", "Game Theory", "Interactive", "Data Stream",
-    "Monotonic Queue", "Brainteaser", "Doubly-Linked List", "Randomized", "Merge Sort",
-    "Counting Sort", "Iterator", "Concurrency", "Probability and Statistics", "Quickselect",
-    "Suffix Array", "Line Sweep", "Minimum Spanning Tree", "Bucket Sort", "Shell",
-    "Reservoir Sampling", "Strongly Connected Component", "Eulerian Circuit", "Radix Sort",
-    "Rejection Sampling", "Biconnected Component"
-  ];
 
   const getSubmissionStatus = (problemId) => {
     const submission = submissions.find(s => s.problemId === problemId);
@@ -59,7 +41,6 @@ const Problems = () => {
   };
 
   const getSubmissionTimeTaken = (problemId) => {
-    // Find the latest accepted submission for this problem
     const acceptedSubmissions = submissions
       .filter(s => s.problemId === problemId && s.status === 'Accepted')
       .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
@@ -74,18 +55,10 @@ const Problems = () => {
                          problem.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDifficulty = selectedDifficulty === "all" || 
                              problem.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
+    const matchesSkills = selectedSkills.length === 0 || 
+                         (problem.topics && problem.topics.some(topic => selectedSkills.includes(topic.toLowerCase().replace(/\s+/g, '-'))));
     
-    // Fix topic filtering to match database format
-    const matchesTopics = selectedTopics.length === 0 || 
-                         (problem.topics && problem.topics.some(problemTopic => {
-                           // Convert selected topics to database format (lowercase, hyphenated)
-                           return selectedTopics.some(selectedTopic => {
-                             const normalizedSelectedTopic = selectedTopic.toLowerCase().replace(/\s+/g, '-');
-                             return problemTopic === normalizedSelectedTopic;
-                           });
-                         }));
-    
-    return matchesSearch && matchesDifficulty && matchesTopics;
+    return matchesSearch && matchesDifficulty && matchesSkills;
   });
 
   // Animation variants
@@ -176,20 +149,6 @@ const Problems = () => {
     fetchSubmissions();
     fetchUserData();
   }, [user]);
-
-  // Close topics dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showTopicsFilter && !event.target.closest('.topics-filter-container')) {
-        setShowTopicsFilter(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showTopicsFilter]);
 
   if (loading) {
     return (
@@ -313,75 +272,21 @@ const Problems = () => {
               </select>
             </motion.div>
 
-            {/* Skill Tree Filter - Third */}
+            {/* Skill Tree Filter - Third (NEW) */}
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="relative topics-filter-container lg:w-auto"
+              className="lg:w-auto"
             >
-              <button
-                onClick={() => setShowTopicsFilter(!showTopicsFilter)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-500 bg-gray-700 dark:bg-gray-800 text-gray-300 dark:text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 w-full lg:w-auto`}
-              >
-                <Filter className={`text-gray-400 w-5 h-5`} />
-                <span className="text-base">
-                  {selectedTopics.length === 0 ? "Skill Tree" : `${selectedTopics.length} Topics`}
-                </span>
-                <svg
-                  className={`w-4 h-4 text-gray-400 transition-transform ${showTopicsFilter ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Topics Dropdown */}
-              <AnimatePresence>
-                {showTopicsFilter && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className={`absolute top-full left-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-lg z-50 p-4`}
-                  >
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableTopics.map((topic) => (
-                        <label key={topic} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedTopics.includes(topic)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTopics([...selectedTopics, topic]);
-                              } else {
-                                setSelectedTopics(selectedTopics.filter(t => t !== topic));
-                              }
-                            }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className={`text-sm text-gray-900 dark:text-white`}>{topic}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {selectedTopics.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={() => setSelectedTopics([])}
-                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                        >
-                          Clear Skill Tree
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <SkillTree
+                selectedSkills={selectedSkills}
+                onSkillsChange={setSelectedSkills}
+                className="w-full lg:w-64"
+              />
             </motion.div>
             
             {/* Clear Filters Button */}
             <AnimatePresence>
-              {(searchTerm || selectedDifficulty !== "all" || selectedTopics.length > 0) && (
+              {(searchTerm || selectedDifficulty !== "all" || selectedSkills.length > 0) && (
                 <motion.button
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -391,7 +296,7 @@ const Problems = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setSelectedDifficulty("all");
-                    setSelectedTopics([]);
+                    setSelectedSkills([]);
                   }}
                   className={`flex items-center gap-2 px-4 py-3 text-sm rounded-xl border border-red-300 dark:border-red-600 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 lg:w-auto`}
                 >
@@ -405,7 +310,7 @@ const Problems = () => {
 
         {/* Filter Summary */}
         <AnimatePresence>
-          {(searchTerm || selectedDifficulty !== "all" || selectedTopics.length > 0) && (
+          {(searchTerm || selectedDifficulty !== "all" || selectedSkills.length > 0) && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -435,13 +340,13 @@ const Problems = () => {
                     Difficulty: {selectedDifficulty}
                   </motion.span>
                 )}
-                {selectedTopics.length > 0 && (
+                {selectedSkills.length > 0 && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-xs font-medium"
                   >
-                    Skill Tree: {selectedTopics.map(topic => topic).join(', ')}
+                    Skills: {selectedSkills.length} selected
                   </motion.span>
                 )}
                 <span className="text-gray-500 flex items-center gap-1">
@@ -462,10 +367,11 @@ const Problems = () => {
               className={`${themeColors.accentBg} rounded-xl border ${themeColors.border} overflow-hidden shadow-lg`}
             >
               {/* Table Header */}
-              <div className={`${themeColors.accentBg} px-8 py-4`}> {/* px-8 for more space, theme-based bg */}
-                <div className={`grid grid-cols-11 gap-4 text-sm font-medium ${themeColors.text} items-center`}>
+              <div className={`${themeColors.accentBg} px-8 py-4`}>
+                <div className={`grid grid-cols-12 gap-4 text-sm font-medium ${themeColors.text} items-center`}>
                   <div className="col-span-3 truncate">Title</div>
                   <div className="col-span-1 text-center">Difficulty</div>
+                  <div className="col-span-1 text-center">Topics</div>
                   <div className="col-span-1 text-center">Success Rate</div>
                   <div className="col-span-1 text-center">Status</div>
                   <div className="col-span-1 text-center">Time Limit</div>
@@ -489,7 +395,7 @@ const Problems = () => {
                         whileHover={{ backgroundColor: themeColors.accentHover, scale: 1.005 }}
                         className={`px-8 py-4 transition-all duration-200 cursor-pointer`}
                       >
-                        <div className="grid grid-cols-11 gap-4 items-center">
+                        <div className="grid grid-cols-12 gap-4 items-center">
                           {/* Title and Description */}
                           <div className="col-span-3 min-w-0">
                             <motion.h3
@@ -511,6 +417,17 @@ const Problems = () => {
                               }`}
                             >
                               {problem.difficulty}
+                            </motion.span>
+                          </div>
+                          {/* Topics */}
+                          <div className="col-span-1 flex justify-center">
+                            <motion.span
+                              whileHover={{ color: "#3B82F6" }}
+                              className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm whitespace-nowrap ${
+                                problem.topics && problem.topics.length > 0 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'
+                              }`}
+                            >
+                              {problem.topics && problem.topics.length > 0 ? problem.topics.map(topic => topic).join(', ') : 'N/A'}
                             </motion.span>
                           </div>
                           {/* Success Rate */}
@@ -588,6 +505,7 @@ const Problems = () => {
               </div>
             </motion.div>
           </div>
+          
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             <AnimatePresence>
@@ -625,6 +543,25 @@ const Problems = () => {
                           {problem.difficulty}
                         </motion.span>
                       </div>
+
+                      {/* Topics */}
+                      {problem.topics && problem.topics.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {problem.topics.slice(0, 3).map((topic) => (
+                            <span
+                              key={topic}
+                              className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium"
+                            >
+                              {topic}
+                            </span>
+                          ))}
+                          {problem.topics.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-medium">
+                              +{problem.topics.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-4">
@@ -732,39 +669,9 @@ const Problems = () => {
                 {problems.length === 0 ? (
                   "No problems available in the database."
                 ) : (
-                  `Try adjusting your search terms or difficulty filter. (${problems.length} total problems available)`
+                  `Try adjusting your search terms or filters. (${problems.length} total problems available)`
                 )}
               </motion.p>
-              {searchTerm && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className={`text-sm ${themeColors.textSecondary} mb-2`}
-                >
-                  Search term: <span className="font-medium">"{searchTerm}"</span>
-                </motion.p>
-              )}
-              {selectedDifficulty !== "all" && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className={`text-sm ${themeColors.textSecondary}`}
-                >
-                  Difficulty filter: <span className="font-medium">{selectedDifficulty}</span>
-                </motion.p>
-              )}
-              {selectedTopics.length > 0 && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className={`text-sm ${themeColors.textSecondary}`}
-                >
-                  Skill Tree filter: <span className="font-medium">{selectedTopics.map(topic => topic).join(', ')}</span>
-                </motion.p>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -773,4 +680,4 @@ const Problems = () => {
   );
 };
 
-export default Problems;
+export default ProblemsWithSkillTree;
