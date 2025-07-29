@@ -142,6 +142,49 @@ export const AuthProvider = ({ children }) => {
         return data.user;
     };
 
+    // Google Login function
+    const googleLogin = async (credential) => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ credential }),
+            });
+
+            let data = null;
+            const text = await res.text();
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    throw new Error("Invalid server response. Please try again later.");
+                }
+            }
+
+            if (!res.ok) {
+                throw new Error((data && data.message) || "Google login failed. Please try again.");
+            }
+
+            if (!data || !data.token || !data.user) {
+                throw new Error("Invalid server response. Please try again later.");
+            }
+
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", data.user.role);
+            sessionStorage.setItem("user", JSON.stringify(data.user));
+
+            setToken(data.token);
+            setUser(data.user);
+            setRole(data.user.role);
+
+            navigate(data.user.role === "admin" ? "/admin-dashboard" : "/userDashboard/user-dashboard");
+
+            return data.user;
+        } catch (error) {
+            throw new Error(error.message || "Google login failed. Please try again.");
+        }
+    };
+
     // Logout function
     const logout = () => {
         // Clear interval if running
@@ -189,7 +232,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, role, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, token, role, login, googleLogin, logout, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );

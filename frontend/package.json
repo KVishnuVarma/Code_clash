@@ -13,6 +13,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@monaco-editor/react": "^4.7.0",
+    "@react-oauth/google": "^0.12.2",
     "chart.js": "^4.4.8",
     "confetti-js": "^0.0.18",
     "framer-motion": "^12.4.10",

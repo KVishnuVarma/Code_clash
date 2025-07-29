@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import GoogleLogin from "../Components/GoogleLogin";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -32,6 +33,10 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleError = (errorMessage) => {
+    setError(errorMessage);
   };
 
   return (
@@ -87,6 +92,18 @@ const Login = () => {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className={`flex-1 border-t ${themeColors.border}`}></div>
+          <span className={`px-3 ${themeColors.textSecondary}`}>or</span>
+          <div className={`flex-1 border-t ${themeColors.border}`}></div>
+        </div>
+
+        {/* Google Login */}
+        <div className="mb-4">
+          <GoogleLogin onError={handleGoogleError} />
+        </div>
 
         {/* Register Link */}
         <p className={`text-center ${themeColors.textSecondary} mt-4`}>

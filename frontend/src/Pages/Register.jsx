@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import GoogleLogin from "../Components/GoogleLogin";
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
@@ -48,9 +49,8 @@ const Register = () => {
     }
   };
 
-  const handleGoogleSignup = () => {
-    setLoading(true);
-    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+  const handleGoogleError = (errorMessage) => {
+    setError(errorMessage);
   };
 
   return (
@@ -103,14 +103,19 @@ const Register = () => {
             Register
           </button>
         </form>
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={handleGoogleSignup}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 border rounded-md bg-gray-100 hover:bg-gray-200 transition"
-          >
-          </button>
+
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className={`flex-1 border-t ${themeColors.border}`}></div>
+          <span className={`px-3 ${themeColors.textSecondary}`}>or</span>
+          <div className={`flex-1 border-t ${themeColors.border}`}></div>
         </div>
+
+        {/* Google Login */}
+        <div className="mb-4">
+          <GoogleLogin onError={handleGoogleError} />
+        </div>
+
         <p className={`text-center ${themeColors.textSecondary} mt-4`}>
           Already have an account? <a href="/login" className={`${themeColors.text} hover:underline`}>Login here</a>
         </p>
