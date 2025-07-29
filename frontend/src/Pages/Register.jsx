@@ -55,7 +55,7 @@ const Register = () => {
 
   return (
     <div className={`flex min-h-screen items-center justify-center ${themeColors.bg}`}>
-      <div className={`w-full max-w-md p-8 ${themeColors.bg} shadow-lg rounded-lg relative border ${themeColors.border}`}>
+      <div className={`w-full max-w-lg p-8 ${themeColors.bg} shadow-lg rounded-lg relative border ${themeColors.border}`}>
         {loading && (
           <div className={`absolute inset-0 flex items-center justify-center ${themeColors.bg} bg-opacity-80`}>
             <div className="flex space-x-2">
@@ -75,7 +75,9 @@ const Register = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className={`w-full p-3 border ${themeColors.border} rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${themeColors.bg} ${themeColors.text}`}
+            className={`w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-0 focus:outline-none transition-all duration-300 ${
+              themeColors.text === 'text-white' ? 'bg-black text-white border-gray-600 focus:border-white' : 'bg-white text-black border-gray-300 focus:border-black'
+            }`}
           />
           <input
             type="email"
@@ -84,7 +86,9 @@ const Register = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            className={`w-full p-3 border ${themeColors.border} rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${themeColors.bg} ${themeColors.text}`}
+            className={`w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-0 focus:outline-none transition-all duration-300 ${
+              themeColors.text === 'text-white' ? 'bg-black text-white border-gray-600 focus:border-white' : 'bg-white text-black border-gray-300 focus:border-black'
+            }`}
           />
           <input
             type="password"
@@ -93,12 +97,18 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            className={`w-full p-3 border ${themeColors.border} rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${themeColors.bg} ${themeColors.text}`}
+            className={`w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-0 focus:outline-none transition-all duration-300 ${
+              themeColors.text === 'text-white' ? 'bg-black text-white border-gray-600 focus:border-white' : 'bg-white text-black border-gray-300 focus:border-black'
+            }`}
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full p-3 bg-gray-600 text-white font-bold rounded-md hover:bg-gray-700 transition"
+            className={`w-full p-3 font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+              themeColors.text === 'text-white' 
+                ? 'bg-gray-800 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-800 text-white' 
+                : 'bg-gray-200 hover:bg-gradient-to-r hover:from-purple-600 hover:to-purple-800 text-gray-800 hover:text-white'
+            }`}
           >
             Register
           </button>
