@@ -30,36 +30,46 @@ const adminMiddleware = (req, res, next) => {
 // Google OAuth authentication
 router.post('/google', async (req, res) => {
     try {
+        console.log('🔐 Google OAuth request received');
         const { credential } = req.body;
         
         if (!credential) {
+            console.log('❌ No credential provided');
             return res.status(400).json({ message: 'Google credential is required' });
         }
 
+        console.log('📝 Decoding Google credential...');
         // Decode the JWT token from Google
         const decoded = jwt.decode(credential);
         
         if (!decoded) {
+            console.log('❌ Invalid Google credential format');
             return res.status(400).json({ message: 'Invalid Google credential' });
         }
 
+        console.log('✅ Google credential decoded successfully');
         const { email, name, picture, sub: googleId } = decoded;
 
+        console.log(`🔍 Checking if user exists: ${email}`);
         // Check if user already exists
         let user = await User.findOne({ email });
 
         if (user) {
+            console.log('✅ User found, checking status...');
             // User exists, check if suspended
             if (user.isSuspended) {
+                console.log('❌ User is suspended');
                 return res.status(403).json({ message: "Your account is suspended. Contact admin." });
             }
 
             // Update user's Google ID if not set
             if (!user.googleId) {
+                console.log('🔄 Updating user Google ID...');
                 user.googleId = googleId;
                 await user.save();
             }
         } else {
+            console.log('🆕 Creating new user...');
             // Create new user
             user = new User({
                 name,
@@ -71,19 +81,23 @@ router.post('/google', async (req, res) => {
                 profilePicture: picture
             });
             await user.save();
+            console.log('✅ New user created successfully');
         }
 
+        console.log('📝 Logging user activity...');
         // Log the activity
         user.activityLog.push(`User logged in with Google at ${new Date().toISOString()}`);
         await user.save();
 
+        console.log('🔑 Generating JWT token...');
         // Generate JWT token
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
+        console.log('✅ Google authentication successful, sending response...');
         res.json({ 
             token, 
             user: { 
-                id: user.id, 
+                _id: user._id, 
                 name: user.name, 
                 email: user.email, 
                 role: user.role,
@@ -95,8 +109,8 @@ router.post('/google', async (req, res) => {
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
         });
     } catch (err) {
-        console.error("Error in Google authentication:", err);
-        res.status(500).json({ message: 'Server Error' });
+        console.error("❌ Error in Google authentication:", err);
+        res.status(500).json({ message: 'Server Error: ' + err.message });
     }
 });
 
@@ -130,12 +144,12 @@ router.post('/register', [
         });
         await user.save();
 
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         res.json({ 
             token, 
             user: { 
-                id: user.id, 
+                _id: user._id, 
                 name, 
                 email, 
                 role: user.role,
@@ -175,7 +189,7 @@ router.post('/login', [
             return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         user.activityLog.push(`User logged in at ${new Date().toISOString()}`);
         await user.save();
@@ -183,7 +197,7 @@ router.post('/login', [
         res.json({ 
             token, 
             user: { 
-                id: user.id, 
+                _id: user._id, 
                 name: user.name, 
                 email: user.email, 
                 role: user.role,
