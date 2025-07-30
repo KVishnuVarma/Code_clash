@@ -75,15 +75,11 @@ const Problems = () => {
     const matchesDifficulty = selectedDifficulty === "all" || 
                              problem.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
     
-    // Fix topic filtering to match database format
+    // Fix topic filtering - topics are stored as simple strings in database
     const matchesTopics = selectedTopics.length === 0 || 
-                         (problem.topics && problem.topics.some(problemTopic => {
-                           // Convert selected topics to database format (lowercase, hyphenated)
-                           return selectedTopics.some(selectedTopic => {
-                             const normalizedSelectedTopic = selectedTopic.toLowerCase().replace(/\s+/g, '-');
-                             return problemTopic === normalizedSelectedTopic;
-                           });
-                         }));
+                         (problem.topics && problem.topics.some(problemTopic => 
+                           selectedTopics.includes(problemTopic)
+                         ));
     
     return matchesSearch && matchesDifficulty && matchesTopics;
   });

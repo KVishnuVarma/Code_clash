@@ -187,6 +187,9 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
     topics: [],
   });
 
+  const [isTopicsOpen, setIsTopicsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   // Available topics for skill tree
   const availableTopics = [
     "Array", "String", "Hash Table", "Dynamic Programming", "Math", "Sorting",
@@ -204,6 +207,23 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
     "Reservoir Sampling", "Strongly Connected Component", "Eulerian Circuit", "Radix Sort",
     "Rejection Sampling", "Biconnected Component"
   ];
+
+  const filteredTopics = availableTopics.filter(topic =>
+    topic.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Close combobox when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isTopicsOpen && !event.target.closest('.topics-combobox')) {
+        setIsTopicsOpen(false);
+        setSearchTerm("");
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isTopicsOpen]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -251,6 +271,27 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
         testCases: arrayMove(prev.testCases || [], active.id, over.id),
       }));
     }
+  };
+
+  const toggleTopic = (topic) => {
+    if (formData.topics?.includes(topic)) {
+      setFormData({
+        ...formData,
+        topics: formData.topics.filter(t => t !== topic),
+      });
+    } else {
+      setFormData({
+        ...formData,
+        topics: [...(formData.topics || []), topic],
+      });
+    }
+  };
+
+  const removeTopic = (topicToRemove) => {
+    setFormData({
+      ...formData,
+      topics: formData.topics.filter(topic => topic !== topicToRemove),
+    });
   };
 
   if (!isOpen) return null;
@@ -309,46 +350,111 @@ const ProblemModal = ({ isOpen, onClose, onSave, problem, draftKey }) => {
                 <h3 className="text-lg font-semibold mb-4 dark:text-white">
                   Topics (Skill Tree)
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
-                  {availableTopics.map((topic) => (
-                    <label key={topic} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.topics?.includes(topic) || false}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              topics: [...(formData.topics || []), topic],
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              topics: (formData.topics || []).filter((t) => t !== topic),
-                            });
-                          }
-                        }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm dark:text-white">{topic}</span>
-                    </label>
-                  ))}
-                </div>
+                
+                {/* Selected Topics Display */}
                 {formData.topics?.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mb-3">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Selected topics:</p>
                     <div className="flex flex-wrap gap-2">
                       {formData.topics.map((topic) => (
                         <span
                           key={topic}
-                          className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs"
+                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm flex items-center gap-2"
                         >
                           {topic}
+                          <button
+                            onClick={() => removeTopic(topic)}
+                            className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Combobox */}
+                <div className="relative topics-combobox">
+                  <button
+                    type="button"
+                    onClick={() => setIsTopicsOpen(!isTopicsOpen)}
+                    className="w-full p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white text-left flex items-center justify-between"
+                  >
+                    <span className={formData.topics?.length > 0 ? "text-gray-900 dark:text-white" : "text-gray-500"}>
+                      {formData.topics?.length > 0 
+                        ? `${formData.topics.length} topic(s) selected` 
+                        : "Select topics..."}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${isTopicsOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {isTopicsOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                      {/* Search Input */}
+                      <div className="p-3 border-b dark:border-gray-600">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search topics..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full p-2 pl-8 border dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-white text-sm"
+                          />
+                          <svg
+                            className="absolute left-2 top-2.5 w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Topics List */}
+                      <div className="max-h-48 overflow-y-auto">
+                        {filteredTopics.length > 0 ? (
+                          filteredTopics.map((topic) => (
+                            <button
+                              key={topic}
+                              onClick={() => toggleTopic(topic)}
+                              className={`w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center ${
+                                formData.topics?.includes(topic)
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                  : 'text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 border rounded mr-3 flex items-center justify-center ${
+                                formData.topics?.includes(topic)
+                                  ? 'bg-blue-600 border-blue-600'
+                                  : 'border-gray-300 dark:border-gray-600'
+                              }`}>
+                                {formData.topics?.includes(topic) && (
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                              {topic}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                            No topics found matching "{searchTerm}"
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
