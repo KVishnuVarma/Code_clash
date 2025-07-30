@@ -13,7 +13,7 @@ if (!GOOGLE_CLIENT_ID) {
   console.error("❌ VITE_GOOGLE_CLIENT_ID is not set in environment variables!");
   console.error("Please set VITE_GOOGLE_CLIENT_ID in your deployment environment variables.");
 } else {
-  console.log("✅ Google OAuth Client ID configured");
+  console.log("✅ Google OAuth Client ID configured:", GOOGLE_CLIENT_ID.substring(0, 20) + "...");
 }
 
 // Check if we're in production and backend URL is set
@@ -25,11 +25,17 @@ if (!BACKEND_URL) {
   console.log("✅ Backend URL configured:", BACKEND_URL);
 }
 
+console.log("🌐 Current environment:", import.meta.env.MODE);
+console.log("🔗 Current URL:", window.location.href);
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <GoogleOAuthProvider 
     clientId={GOOGLE_CLIENT_ID || ""}
     onScriptLoadError={(error) => {
       console.error("❌ Google OAuth script failed to load:", error);
+    }}
+    onScriptLoadSuccess={() => {
+      console.log("✅ Google OAuth script loaded successfully");
     }}
   >
     <BrowserRouter>
