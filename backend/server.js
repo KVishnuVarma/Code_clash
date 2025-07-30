@@ -128,6 +128,7 @@ app.use("/api/contest", require("./routes/ContestRoutes"));
 app.use("/api/problems", require("./routes/problemRoutes"));
 app.use("/api/submissions", require("./routes/submissionRoutes"));
 app.use("/api/aihelp", require("./routes/aiHelpRoutes"));
+app.use("/api/streak", require("./routes/streakRoutes"));
 
 app.get("/", (req, res) => {
     res.status(200).json({ message: "\u2705 API is running..." });

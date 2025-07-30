@@ -2,6 +2,7 @@ const Submission = require("../models/Submission");
 const Problem = require("../models/Problem");
 const { executeCode } = require("../utils/codeExecution");
 const User = require("../models/User");
+const { updateStreak } = require("./streakController");
 
 const submitCode = async (req, res) => {
   const { userId, problemId, language, code, violations, mode, elapsedTime } = req.body;
@@ -152,6 +153,9 @@ const submitCode = async (req, res) => {
           $inc: { points: score },
           $addToSet: { solvedProblems: problemId },
         });
+        
+        // Update streak when user solves a problem
+        await updateStreak(userId, problemId, score, problem.topics || []);
       } else {
         // Only increment totalSubmissions if not a new solve
         await Problem.findByIdAndUpdate(problemId, {

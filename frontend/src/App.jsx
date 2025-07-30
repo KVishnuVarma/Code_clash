@@ -26,6 +26,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import ProblemView from "./Components/ProblemView";
 import ProblemSolver from "./Components/ProblemSolver";
 import ResultsPage from "./Components/ResultsPage";
+import StreakTest from "./Pages/StreakTest";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -121,6 +122,16 @@ export default function App() {
         {/* Protected Problem Solver Route */}
         <Route path="/problems/:id/solve" element={<ProblemSolver />} />
         <Route path="/problems/:id/results" element={<ResultsPage />} />
+
+        {/* Streak Test Route */}
+        <Route 
+          path="/streak-test" 
+          element={
+            <ProtectedRoute>
+              <StreakTest />
+            </ProtectedRoute>
+          } 
+        />
 
         {/* Admin Routes */}
         <Route 
