@@ -145,30 +145,43 @@ export const AuthProvider = ({ children }) => {
     // Google Login function
     const googleLogin = async (credential) => {
         try {
+            console.log('🔐 Starting Google login process...');
+            console.log('📡 Backend URL:', import.meta.env.VITE_BACKEND_URL);
+            
             const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ credential }),
             });
 
+            console.log('📥 Response status:', res.status);
+            console.log('📥 Response headers:', Object.fromEntries(res.headers.entries()));
+
             let data = null;
             const text = await res.text();
+            console.log('📥 Response text:', text);
+            
             if (text) {
                 try {
                     data = JSON.parse(text);
-                } catch {
+                    console.log('✅ Parsed response data:', data);
+                } catch (parseError) {
+                    console.error('❌ Failed to parse response:', parseError);
                     throw new Error("Invalid server response. Please try again later.");
                 }
             }
 
             if (!res.ok) {
+                console.error('❌ Server error:', res.status, data);
                 throw new Error((data && data.message) || "Google login failed. Please try again.");
             }
 
             if (!data || !data.token || !data.user) {
+                console.error('❌ Invalid response structure:', data);
                 throw new Error("Invalid server response. Please try again later.");
             }
 
+            console.log('✅ Google login successful, setting session data...');
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", data.user.role);
             sessionStorage.setItem("user", JSON.stringify(data.user));
@@ -177,10 +190,12 @@ export const AuthProvider = ({ children }) => {
             setUser(data.user);
             setRole(data.user.role);
 
+            console.log('🔄 Navigating to dashboard...');
             navigate(data.user.role === "admin" ? "/admin-dashboard" : "/userDashboard/user-dashboard");
 
             return data.user;
         } catch (error) {
+            console.error('❌ Google login error:', error);
             throw new Error(error.message || "Google login failed. Please try again.");
         }
     };

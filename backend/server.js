@@ -31,15 +31,26 @@ const allowedOrigins = [
     "http://localhost:3000", // Additional local development port
     "https://codeclashv.vercel.app", // Added deployed frontend URL
     "https://accounts.google.com", // Allow Google OAuth
-    "https://oauth2.googleapis.com" // Allow Google OAuth endpoints
+    "https://oauth2.googleapis.com", // Allow Google OAuth endpoints
+    "https://www.googleapis.com", // Allow Google APIs
+    "https://google.com", // Allow Google domains
+    "https://www.google.com" // Allow Google domains
 ];
+
+console.log("🌐 Allowed CORS origins:", allowedOrigins);
 
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+        if (!origin) {
+            console.log("✅ Allowing request with no origin");
+            return callback(null, true);
+        }
+        
+        console.log("🌐 Checking origin:", origin);
         
         if (allowedOrigins.indexOf(origin) !== -1) {
+            console.log("✅ Origin allowed:", origin);
             callback(null, true);
         } else {
             console.warn(`⚠️ CORS blocked origin: ${origin}`);
@@ -48,7 +59,7 @@ app.use(cors({
     },
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'Origin', 'Accept']
 }));
 
 // Handle preflight requests for all routes

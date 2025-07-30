@@ -31,6 +31,9 @@ const adminMiddleware = (req, res, next) => {
 router.post('/google', async (req, res) => {
     try {
         console.log('🔐 Google OAuth request received');
+        console.log('📥 Request headers:', req.headers);
+        console.log('📥 Request body:', req.body);
+        
         const { credential } = req.body;
         
         if (!credential) {
@@ -48,6 +51,13 @@ router.post('/google', async (req, res) => {
         }
 
         console.log('✅ Google credential decoded successfully');
+        console.log('📋 Decoded data:', { 
+            email: decoded.email, 
+            name: decoded.name, 
+            sub: decoded.sub,
+            picture: decoded.picture 
+        });
+        
         const { email, name, picture, sub: googleId } = decoded;
 
         console.log(`🔍 Checking if user exists: ${email}`);
@@ -94,7 +104,7 @@ router.post('/google', async (req, res) => {
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         console.log('✅ Google authentication successful, sending response...');
-        res.json({ 
+        const responseData = { 
             token, 
             user: { 
                 _id: user._id, 
@@ -107,9 +117,13 @@ router.post('/google', async (req, res) => {
                 profilePicture: user.profilePicture
             },
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
-        });
+        };
+        
+        console.log('📤 Sending response:', responseData);
+        res.json(responseData);
     } catch (err) {
         console.error("❌ Error in Google authentication:", err);
+        console.error("❌ Error stack:", err.stack);
         res.status(500).json({ message: 'Server Error: ' + err.message });
     }
 });

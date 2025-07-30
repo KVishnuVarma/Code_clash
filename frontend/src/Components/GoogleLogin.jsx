@@ -13,6 +13,7 @@ const GoogleLogin = ({ onError }) => {
   const handleSuccess = async (credentialResponse) => {
     try {
       console.log('✅ Google OAuth successful, processing credential...');
+      console.log('📋 Credential response:', credentialResponse);
       await googleLogin(credentialResponse.credential);
     } catch (error) {
       console.error('❌ Google login error:', error);
@@ -24,6 +25,11 @@ const GoogleLogin = ({ onError }) => {
 
   const handleError = (error) => {
     console.error('❌ Google OAuth error:', error);
+    console.error('❌ Error details:', {
+      error: error.error,
+      error_description: error.error_description,
+      error_uri: error.error_uri
+    });
     if (onError) {
       onError('Google login failed. Please try again.');
     }
