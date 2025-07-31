@@ -20,15 +20,20 @@ import {
   Trophy,
   XCircle,
   HelpCircle,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { submitSolution, getUserProblemSubmissions, getProblemParticipants } from "../services/problemService";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import Confetti from "react-confetti";
 import Aihelp from "./Aihelp";
 
 const ProblemSolve = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isDarkMode, toggleDarkMode, getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
   const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -918,18 +923,18 @@ const ProblemSolve = () => {
 
   if (isExamTerminated) {
     return (
-      <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+      <div className={`min-h-screen ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'} flex items-center justify-center p-4`}>
+        <div className={`${themeColors.navBg} rounded-lg shadow-lg p-8 max-w-md w-full border ${themeColors.border}`}>
           <div className="text-center">
             <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
-            <h2 className="text-2xl font-bold text-red-700 mb-4">
+            <h2 className={`text-2xl font-bold text-red-700 dark:text-red-300 mb-4`}>
               Exam Terminated
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className={`${themeColors.text} mb-4`}>
               Your exam has been terminated due to multiple violations of our
               exam policy. This incident has been reported to the administrator.
             </p>
-            <p className="text-sm text-gray-500">
+            <p className={`text-sm ${themeColors.textSecondary}`}>
               You will be redirected to the home page in a few seconds...
             </p>
           </div>
@@ -940,7 +945,7 @@ const ProblemSolve = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className={`flex items-center justify-center h-screen ${themeColors.bg}`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -948,8 +953,8 @@ const ProblemSolve = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
+      <div className={`min-h-screen ${themeColors.bg} p-8`}>
+        <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-6 py-4 rounded-lg">
           <p className="font-medium">Error: {error}</p>
           <button
             onClick={() => navigate("/userDashboard/user-problems")}
@@ -965,10 +970,10 @@ const ProblemSolve = () => {
   // Add null check for problem
   if (!problem) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className={`flex items-center justify-center h-screen ${themeColors.bg}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading problem...</p>
+          <p className={themeColors.text}>Loading problem...</p>
         </div>
       </div>
     );
@@ -978,56 +983,76 @@ const ProblemSolve = () => {
   const showProctoring = !showCelebration && (!testResults || !testResults.passed || (testResults.details && testResults.details.length === 1));
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={`min-h-screen ${themeColors.bg}`}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className={`${themeColors.navBg} shadow-sm border-b ${themeColors.border}`}>
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="flex justify-start">
                 <button
                  onClick={handleBack}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className={`flex items-center gap-2 ${themeColors.text} hover:${themeColors.activeText} transition-colors`}
                   aria-label="Back to Problems"
                 >
                 <ArrowLeft size={20} />
-                <span className="font-medium ">Back to Problems</span>
+                <span className="font-medium">Back to Problems</span>
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Timer size={18} />
-              <span className="font-mono">{formatTime(elapsedTime)}</span>
+            <div className="flex items-center gap-2">
+              <Timer size={18} className={themeColors.text} />
+              <span className={`font-mono ${themeColors.text}`}>{formatTime(elapsedTime)}</span>
               <span className={`text-xs px-2 py-1 rounded-full ${
-                getTimerStatus() === "Active" ? "bg-green-100 text-green-700" :
-                getTimerStatus() === "Paused" || getTimerStatus() === "Paused (Logged Out)" ? "bg-yellow-100 text-yellow-700" :
-                getTimerStatus() === "Completed" ? "bg-blue-100 text-blue-700" :
-                "bg-gray-100 text-gray-700"
+                getTimerStatus() === "Active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
+                getTimerStatus() === "Paused" || getTimerStatus() === "Paused (Logged Out)" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" :
+                getTimerStatus() === "Completed" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
+                `${themeColors.accentBg} ${themeColors.text}`
               }`}>
                 {getTimerStatus()}
               </span>
             </div>
+            {/* Theme Toggle Button */}
+            <div className="flex items-end justify-end gap-2">
+              <button
+                onClick={toggleDarkMode}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${themeColors.accentBg} hover:${themeColors.accentHover} transition-colors ${themeColors.text} text-sm font-medium`}
+                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDarkMode ? (
+                  <>
+                    <Sun size={16} />
+                    <span>Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={16} />
+                    <span>Dark Mode</span>
+                  </>
+                )}
+              </button>
+            </div>
             {/* Participants Button */}
             <div className="relative flex items-center">
               {showParticipants && (
-                <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded shadow-lg z-50 max-h-72 overflow-auto">
-                  <div className="p-2 border-b font-semibold text-gray-700 flex items-center gap-2">
+                <div className={`absolute left-0 top-full mt-2 w-64 ${themeColors.navBg} border ${themeColors.border} rounded shadow-lg z-50 max-h-72 overflow-auto`}>
+                  <div className={`p-2 border-b font-semibold ${themeColors.text} flex items-center gap-2 ${themeColors.border}`}>
                     <Users size={16} /> Participants ({participants.length})
                     <button className="ml-auto text-gray-400 hover:text-red-500" onClick={() => setShowParticipants(false)}>✕</button>
                   </div>
                   {participants.length === 0 ? (
-                    <div className="p-4 text-gray-500 text-center">No participants yet.</div>
+                    <div className={`p-4 ${themeColors.textSecondary} text-center`}>No participants yet.</div>
                   ) : (
-                    <ul className="divide-y divide-gray-100">
+                    <ul className={`divide-y ${themeColors.border}`}>
                       {participants.map((p) => (
                         <li key={p.userId} className="p-2 flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-800">{p.name}</span>
-                            <span className={`text-xs rounded px-2 py-0.5 ml-2 ${p.status === 'Accepted' ? 'bg-green-600 text-green-1000' : 'bg-red-100 text-red-700'}`}>{p.status}</span>
+                            <span className={`font-medium ${themeColors.text}`}>{p.name}</span>
+                            <span className={`text-xs rounded px-2 py-0.5 ml-2 ${p.status === 'Accepted' ? 'bg-green-600 text-green-100 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`}>{p.status}</span>
                           </div>
-                          <div className="flex gap-4 text-xs text-gray-600 mt-1">
-                            <span>Score: <span className="font-semibold text-gray-800">{p.score}</span></span>
-                            <span>Time: <span className="font-semibold text-gray-800">{p.timeTaken}s</span></span>
+                          <div className={`flex gap-4 text-xs ${themeColors.textSecondary} mt-1`}>
+                            <span>Score: <span className={`font-semibold ${themeColors.text}`}>{p.score}</span></span>
+                            <span>Time: <span className={`font-semibold ${themeColors.text}`}>{p.timeTaken}s</span></span>
                           </div>
                         </li>
                       ))}
@@ -1043,9 +1068,9 @@ const ProblemSolve = () => {
                   onClick={() => setShowWebcam(true)}
                   aria-label="Show Camera"
                 >
-                  <Camera size={28} className="text-gray-700 hover:text-indigo-600 transition-colors" />
+                  <Camera size={28} className={`${themeColors.text} hover:text-indigo-600 transition-colors`} />
                 </button>
-                <span className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded shadow-sm">
+                <span className="text-xs text-red-600 font-semibold bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded shadow-sm">
                   Your motion is being detected. Please avoid any disqualifying actions.
                 </span>
               </div>
@@ -1057,17 +1082,17 @@ const ProblemSolve = () => {
       {/* Main Content: LeetCode-style layout */}
       <div className="flex h-[calc(100vh-80px)]">
         {/* Left Panel: Problem Description */}
-        <div className="w-1/2 bg-white border-r border-gray-200 flex flex-col">
+        <div className={`w-1/2 ${themeColors.navBg} border-r ${themeColors.border} flex flex-col`}>
           {/* Problem Header */}
-          <div className="border-b border-gray-200 p-4">
+          <div className={`border-b ${themeColors.border} p-4`}>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-xl font-semibold text-gray-800">{problem.title}</h1>
+              <h1 className={`text-xl font-semibold ${themeColors.text}`}>{problem.title}</h1>
               <span className={`px-2 py-1 rounded text-xs font-medium ${
                 problem.difficulty === "Easy"
-                  ? "bg-green-100 text-green-800"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                   : problem.difficulty === "Medium"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800"
+                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
               }`}>
                 {problem.difficulty}
               </span>
@@ -1075,26 +1100,26 @@ const ProblemSolve = () => {
           </div>
   
           {/* Tabbed Navigation */}
-          <div className="border-b border-gray-200">
+          <div className={`border-b ${themeColors.border}`}>
             <div className="flex items-center">
               <button
-                className={`px-4 py-2 text-sm font-medium ${activeTab === "Description" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-4 py-2 text-sm font-medium ${activeTab === "Description" ? `${themeColors.text} border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-900/30` : `${themeColors.textSecondary} hover:${themeColors.text}`}`}
                 onClick={() => setActiveTab("Description")}
               >
                 Description
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium ${activeTab === "Submissions" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-4 py-2 text-sm font-medium ${activeTab === "Submissions" ? `${themeColors.text} border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-900/30` : `${themeColors.textSecondary} hover:${themeColors.text}`}`}
                 onClick={() => setActiveTab("Submissions")}
               >
                 Submissions
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium ${activeTab === "Participants" ? "text-gray-700 border-b-2 border-blue-500 bg-blue-50" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-4 py-2 text-sm font-medium ${activeTab === "Participants" ? `${themeColors.text} border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-900/30` : `${themeColors.textSecondary} hover:${themeColors.text}`}`}
                 onClick={() => setActiveTab("Participants")}
               >
                 Participants
-                <span className="ml-2 bg-blue-100 text-blue-700 rounded px-2 py-0.5 text-xs font-semibold">{participants.length}</span>
+                <span className="ml-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded px-2 py-0.5 text-xs font-semibold">{participants.length}</span>
               </button>
               {/* AI Help Button in the tab bar */}
               <button
@@ -1123,31 +1148,31 @@ const ProblemSolve = () => {
               <>
                 {/* Problem Description */}
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed mb-6">{problem.description}</p>
+                  <p className={`${themeColors.text} leading-relaxed mb-6`}>{problem.description}</p>
                 </div>
                 {/* Example Test Cases */}
                 <div className="space-y-4">
                   {Array.isArray(problem?.testCases) && problem.testCases.map((testCase, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg border border-gray-200">
+                    <div key={index} className={`${themeColors.accentBg} rounded-lg border ${themeColors.border}`}>
                       <div className="p-4">
-                        <div className="font-semibold text-gray-800 mb-3">Example {index + 1}:</div>
+                        <div className={`font-semibold ${themeColors.text} mb-3`}>Example {index + 1}:</div>
                         <div className="space-y-3">
                           <div>
-                            <div className="text-sm font-medium text-gray-600 mb-1">Input:</div>
-                            <div className="bg-white border border-gray-200 rounded p-3 font-mono text-sm text-gray-800">
+                            <div className={`text-sm font-medium ${themeColors.textSecondary} mb-1`}>Input:</div>
+                            <div className={`${themeColors.navBg} border ${themeColors.border} rounded p-3 font-mono text-sm ${themeColors.text}`}>
                               {testCase.input}
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-600 mb-1">Output:</div>
-                            <div className="bg-white border border-gray-200 rounded p-3 font-mono text-sm text-gray-800">
+                            <div className={`text-sm font-medium ${themeColors.textSecondary} mb-1`}>Output:</div>
+                            <div className={`${themeColors.navBg} border ${themeColors.border} rounded p-3 font-mono text-sm ${themeColors.text}`}>
                               {testCase.output}
                             </div>
                           </div>
                           {testCase.explanation && (
                             <div>
-                              <div className="text-sm font-medium text-gray-600 mb-1">Explanation:</div>
-                              <div className="text-sm text-gray-700">{testCase.explanation}</div>
+                              <div className={`text-sm font-medium ${themeColors.textSecondary} mb-1`}>Explanation:</div>
+                              <div className={`text-sm ${themeColors.text}`}>{testCase.explanation}</div>
                             </div>
                           )}
                         </div>
@@ -1161,18 +1186,18 @@ const ProblemSolve = () => {
               <div className="w-full">
                 {/* Test Results Panel (compile error or test cases) */}
                 {testResults && (
-                  <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className={`border ${themeColors.border} ${themeColors.accentBg} rounded-lg p-4 mb-4`}>
                     {testResults.isCompileError ? (
-                      <div className="text-red-700">
+                      <div className="text-red-700 dark:text-red-300">
                         <div className="flex items-center gap-2 mb-2">
                           <XCircle className="text-red-500" />
                           <span className="font-bold">Compile Error</span>
                         </div>
-                        <pre className="bg-red-100 border border-red-200 rounded p-3 text-sm text-red-800 whitespace-pre-wrap">
+                        <pre className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded p-3 text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap">
                           {testResults.error}
                         </pre>
                         {testResults.compileErrorDetails && testResults.compileErrorDetails.line && (
-                          <div className="mt-2 text-xs text-gray-600">Line: {testResults.compileErrorDetails.line}</div>
+                          <div className={`mt-2 text-xs ${themeColors.textSecondary}`}>Line: {testResults.compileErrorDetails.line}</div>
                         )}
                       </div>
                     ) : (
@@ -1183,13 +1208,13 @@ const ProblemSolve = () => {
                           ) : (
                             <AlertCircle className="text-red-500" />
                           )}
-                          <span className={`font-bold ${testResults.passed ? 'text-green-700' : 'text-red-700'}`}>{testResults.passed ? 'All Test Cases Passed!' : 'Some Test Cases Failed'}</span>
+                          <span className={`font-bold ${testResults.passed ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{testResults.passed ? 'All Test Cases Passed!' : 'Some Test Cases Failed'}</span>
                         </div>
                         <div className="flex gap-2 mb-2">
                           {testResults.details && testResults.details.map((tc, idx) => (
                             <button
                               key={idx}
-                              className={`px-3 py-1 text-xs rounded border ${activeTestCase === idx ? 'bg-blue-100 border-blue-400 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-600'}`}
+                              className={`px-3 py-1 text-xs rounded border ${activeTestCase === idx ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300' : `${themeColors.accentBg} ${themeColors.border} ${themeColors.textSecondary}`}`}
                               onClick={() => setActiveTestCase(idx)}
                             >
                               Case {idx + 1}
@@ -1197,28 +1222,28 @@ const ProblemSolve = () => {
                           ))}
                         </div>
                         {testResults.details && testResults.details[activeTestCase] && (
-                          <div className="bg-white border border-gray-200 rounded p-3 mb-2">
-                            <div className="font-mono text-xs text-gray-600 mb-1">Input:</div>
-                            <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].input}</div>
-                            <div className="font-mono text-xs text-gray-600 mb-1">Expected Output:</div>
-                            <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
-                            <div className="font-mono text-xs text-gray-600 mb-1">Actual Output:</div>
-                            <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
+                          <div className={`${themeColors.navBg} border ${themeColors.border} rounded p-3 mb-2`}>
+                            <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Input:</div>
+                            <div className={`font-mono text-sm ${themeColors.text} mb-2`}>{testResults.details[activeTestCase].input}</div>
+                            <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Expected Output:</div>
+                            <div className={`font-mono text-sm ${themeColors.text} mb-2`}>{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
+                            <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Actual Output:</div>
+                            <div className={`font-mono text-sm ${themeColors.text} mb-2`}>{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
                             {testResults.details[activeTestCase].explanation && (
                               <div className="mt-2">
-                                <div className="font-mono text-xs text-gray-600 mb-1">Explanation:</div>
-                                <div className="font-mono text-sm text-gray-700">{testResults.details[activeTestCase].explanation}</div>
+                                <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Explanation:</div>
+                                <div className={`font-mono text-sm ${themeColors.text}`}>{testResults.details[activeTestCase].explanation}</div>
                               </div>
                             )}
                             {testResults.details[activeTestCase].error && (
-                              <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
+                              <div className="text-xs text-red-600 dark:text-red-300 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
                             )}
-                            <div className={`mt-2 px-2 py-1 rounded text-xs ${testResults.details[activeTestCase].passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{testResults.details[activeTestCase].passed ? '✓ Passed' : '✗ Failed'}</div>
+                            <div className={`mt-2 px-2 py-1 rounded text-xs ${testResults.details[activeTestCase].passed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`}>{testResults.details[activeTestCase].passed ? '✓ Passed' : '✗ Failed'}</div>
                           </div>
                         )}
-                        <div className="text-xs text-gray-500">{testResults.details && testResults.details.filter(tc => tc.passed).length}/{testResults.details ? testResults.details.length : 0} testcases passed</div>
+                        <div className={`text-xs ${themeColors.textSecondary}`}>{testResults.details && testResults.details.filter(tc => tc.passed).length}/{testResults.details ? testResults.details.length : 0} testcases passed</div>
                         {testResults.error && !testResults.passed && (
-                          <div className="text-xs text-red-600 mt-2">{testResults.error}</div>
+                          <div className="text-xs text-red-600 dark:text-red-300 mt-2">{testResults.error}</div>
                         )}
                       </>
                     )}
@@ -1230,46 +1255,46 @@ const ProblemSolve = () => {
                     {allSubmissions.map((sub, idx) => (
                       <div key={sub._id || idx} className="relative flex items-start mb-4">
                         {/* Submission Card */}
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-6 w-full">
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-6 w-full">
                           <div className="flex items-center gap-3 mb-2">
                             <CheckCircle className={sub.status === "Accepted" ? "text-green-600" : "text-red-600"} size={28} />
-                            <span className={`text-2xl font-bold ${sub.status === "Accepted" ? "text-green-800" : "text-red-800"}`}>{sub.status === "Accepted" ? "All Test Cases Passed!" : "Wrong Answer"}</span>
+                            <span className={`text-2xl font-bold ${sub.status === "Accepted" ? "text-green-800 dark:text-green-300" : "text-red-800 dark:text-red-300"}`}>{sub.status === "Accepted" ? "All Test Cases Passed!" : "Wrong Answer"}</span>
                           </div>
                           <div className="flex gap-8 mt-4">
                             <div className="flex flex-col items-center">
-                              <span className="text-lg font-semibold text-gray-700">Score</span>
-                              <span className="text-3xl font-bold text-green-700">{sub.score}</span>
+                              <span className={`text-lg font-semibold ${themeColors.text}`}>Score</span>
+                              <span className="text-3xl font-bold text-green-700 dark:text-green-300">{sub.score}</span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-lg font-semibold text-gray-700">Time</span>
-                              <span className="text-3xl font-bold text-blue-700">{sub.timeTaken}s</span>
+                              <span className={`text-lg font-semibold ${themeColors.text}`}>Time</span>
+                              <span className="text-3xl font-bold text-blue-700 dark:text-blue-300">{sub.timeTaken}s</span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-lg font-semibold text-gray-700">Submitted</span>
-                              <span className="text-md text-gray-600">{new Date(sub.submittedAt).toLocaleString()}</span>
+                              <span className={`text-lg font-semibold ${themeColors.text}`}>Submitted</span>
+                              <span className={`text-md ${themeColors.textSecondary}`}>{new Date(sub.submittedAt).toLocaleString()}</span>
                             </div>
                           </div>
                           <div className="mb-4 mt-4">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Test Cases</h3>
+                            <h3 className={`text-lg font-semibold ${themeColors.text} mb-2`}>Test Cases</h3>
                             <ul className="space-y-2">
                               {sub.testResults && sub.testResults.map((tc, tcidx) => (
-                                <li key={tcidx} className="bg-white border border-gray-200 rounded p-3 flex flex-col">
+                                <li key={tcidx} className={`${themeColors.navBg} border ${themeColors.border} rounded p-3 flex flex-col`}>
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-gray-700">Case {tcidx + 1}:</span>
+                                    <span className={`font-semibold ${themeColors.text}`}>Case {tcidx + 1}:</span>
                                     {tc.passed ? (
-                                      <span className="text-green-600 font-bold">Passed</span>
+                                      <span className="text-green-600 dark:text-green-300 font-bold">Passed</span>
                                     ) : (
-                                      <span className="text-red-600 font-bold">Failed</span>
+                                      <span className="text-red-600 dark:text-red-300 font-bold">Failed</span>
                                     )}
                                   </div>
-                                  <div className="text-xs text-gray-600">Input: <span className="font-mono">{tc.input}</span></div>
-                                  <div className="text-xs text-gray-600">Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
-                                  <div className="text-xs text-gray-600">Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
+                                  <div className={`text-xs ${themeColors.textSecondary}`}>Input: <span className="font-mono">{tc.input}</span></div>
+                                  <div className={`text-xs ${themeColors.textSecondary}`}>Expected Output: <span className="font-mono">{tc.expectedOutput || tc.output}</span></div>
+                                  <div className={`text-xs ${themeColors.textSecondary}`}>Actual Output: <span className="font-mono">{tc.actualOutput || tc.output}</span></div>
                                   {tc.explanation && (
-                                    <div className="mt-1 text-xs text-gray-700">Explanation: <span className="font-mono">{tc.explanation}</span></div>
+                                    <div className={`mt-1 text-xs ${themeColors.text}`}>Explanation: <span className="font-mono">{tc.explanation}</span></div>
                                   )}
                                   {tc.error && (
-                                    <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{tc.error}</span></div>
+                                    <div className="text-xs text-red-600 dark:text-red-300 mt-1">Error: <span className="font-mono">{tc.error}</span></div>
                                   )}
                                 </li>
                               ))}
@@ -1322,52 +1347,52 @@ const ProblemSolve = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-gray-500 text-center mt-8">No submissions yet.</div>
+                  <div className={`${themeColors.textSecondary} text-center mt-8`}>No submissions yet.</div>
                 )}
               </div>
             )}
             {activeTab === "Participants" && (
-              <div className="bg-slate-900 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'} rounded-2xl shadow-sm border ${themeColors.border} overflow-hidden`}>
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-700 to-slate-600 p-6">
-                  <div className="flex items-center gap-3 text-white">
-                    <div className="p-2 bg-white/10 rounded-full">
+                <div className={`bg-gradient-to-r ${isDarkMode ? 'from-slate-700 to-slate-600' : 'from-slate-200 to-slate-300'} p-6`}>
+                  <div className={`flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    <div className={`p-2 ${isDarkMode ? 'bg-white/10' : 'bg-slate-600/10'} rounded-full`}>
                       <Users size={24} />
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold">Participants</h2>
-                      <p className="text-slate-200 text-sm">{participants.length} members joined</p>
+                      <p className={`text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-600'}`}>{participants.length} members joined</p>
                     </div>
                   </div>
                 </div>
     {/* Content */}
     {participants.length === 0 ? (
       <div className="flex flex-col items-center justify-center py-16 px-6">
-        <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mb-4">
-          <Users size={32} className="text-slate-400" />
+        <div className={`w-16 h-16 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'} rounded-full flex items-center justify-center mb-4`}>
+          <Users size={32} className={isDarkMode ? 'text-slate-400' : 'text-slate-600'} />
         </div>
-        <h3 className="text-lg font-semibold text-slate-200 mb-2">No participants yet</h3>
-        <p className="text-slate-400 text-center">Participants will appear here once they join the session.</p>
+        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} mb-2`}>No participants yet</h3>
+        <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-center`}>Participants will appear here once they join the session.</p>
       </div>
     ) : (
-      <div className="divide-y divide-slate-600">
+      <div className={`divide-y ${isDarkMode ? 'divide-slate-600' : 'divide-slate-200'}`}>
         {participants.map((participant, index) => (
-          <div key={participant.userId} className="p-6 hover:bg-slate-700/50 transition-colors duration-200">
+          <div key={participant.userId} className={`p-6 hover:${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-100/50'} transition-colors duration-200`}>
             <div className="flex items-center justify-between">
               {/* Left side - Name and Status */}
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                <div className={`w-12 h-12 bg-gradient-to-br ${isDarkMode ? 'from-slate-600 to-slate-700' : 'from-slate-400 to-slate-500'} rounded-full flex items-center justify-center text-white font-bold text-lg`}>
                   {participant.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-100 text-lg">
+                  <h3 className={`font-semibold text-lg ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                     {participant.name}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                       participant.status === 'Accepted' 
-                        ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-700' 
-                        : 'bg-red-900/30 text-red-300 border border-red-700'
+                        ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700' 
+                        : 'bg-red-900/30 text-red-300 border border-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700'
                     }`}>
                       <span className={`w-2 h-2 rounded-full mr-2 ${
                         participant.status === 'Accepted' ? 'bg-emerald-400' : 'bg-red-400'
@@ -1382,18 +1407,18 @@ const ProblemSolve = () => {
               {participant.status === 'Accepted' && (
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-slate-300 mb-1">
+                    <div className={`flex items-center justify-center gap-1 mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                       <Trophy size={18} strokeWidth={2.5} />
                     </div>
-                    <div className="text-2xl font-bold text-slate-100">{participant.score}</div>
-                    <div className="text-xs text-slate-500 uppercase tracking-wide">Score</div>
+                    <div className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>{participant.score}</div>
+                    <div className={`text-xs uppercase tracking-wide ${isDarkMode ? 'text-slate-500' : 'text-slate-600'}`}>Score</div>
                   </div>
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-slate-300 mb-1">
+                    <div className={`flex items-center justify-center gap-1 mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                       <Clock size={18} strokeWidth={2.5} />
                     </div>
-                    <div className="text-2xl font-bold text-slate-100">{participant.timeTaken}s</div>
-                    <div className="text-xs text-slate-500 uppercase tracking-wide">Time</div>
+                    <div className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>{participant.timeTaken}s</div>
+                    <div className={`text-xs uppercase tracking-wide ${isDarkMode ? 'text-slate-500' : 'text-slate-600'}`}>Time</div>
                   </div>
                 </div>
               )}
@@ -1401,7 +1426,7 @@ const ProblemSolve = () => {
 
             {/* Ranking indicator for top performers */}
             {participant.status === 'Accepted' && index < 3 && (
-              <div className="mt-3 pt-3 border-t border-slate-600">
+              <div className={`mt-3 pt-3 border-t ${isDarkMode ? 'border-slate-600' : 'border-slate-200'}`}>
                 <div className="flex items-center gap-2">
                 </div>
               </div>
@@ -1413,12 +1438,12 @@ const ProblemSolve = () => {
 
     {/* Footer Stats */}
     {participants.length > 0 && (
-      <div className="bg-slate-700 px-6 py-4 border-t border-slate-600">
+      <div className={`${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} px-6 py-4 border-t ${isDarkMode ? 'border-slate-600' : 'border-slate-300'}`}>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-400">
+          <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
             {participants.filter(p => p.status === 'Accepted').length} accepted • {participants.filter(p => p.status === 'Declined').length} declined
           </span>
-          <span className="text-slate-400">
+          <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
             Avg Score: {Math.round(participants.filter(p => p.status === 'Accepted').reduce((sum, p) => sum + p.score, 0) / participants.filter(p => p.status === 'Accepted').length) || 0}
           </span>
         </div>
@@ -1429,12 +1454,12 @@ const ProblemSolve = () => {
           </div>
         </div>
         {/* Right Panel: Code Editor and Results */}
-        <div className="w-1/2 flex flex-col bg-white relative">
+        <div className={`w-1/2 flex flex-col ${themeColors.navBg} relative`}>
           {/* Code Editor Header */}
-          <div className="border-b border-gray-200 p-3 bg-gray-50">
+          <div className={`border-b ${themeColors.border} p-3 ${themeColors.accentBg}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-700">Code</span>
+                <span className={`text-sm font-medium ${themeColors.text}`}>Code</span>
                 {problem.languages && Array.isArray(problem.languages) && problem.languages.length > 0 && selectedLanguage ? (
                   <select
                     value={selectedLanguage.id}
@@ -1446,7 +1471,7 @@ const ProblemSolve = () => {
                         handleLanguageChange(newLanguage);
                       }
                     }}
-                    className="text-sm border border-gray-300 rounded px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:border-gray-400 transition-colors"
+                    className={`text-sm border ${themeColors.border} rounded px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${themeColors.navBg} shadow-sm hover:${themeColors.accentHover} transition-colors ${themeColors.text}`}
                   >
                     {problem.languages.map((lang) => (
                       <option key={lang.id} value={lang.id}>
@@ -1455,7 +1480,7 @@ const ProblemSolve = () => {
                     ))}
                   </select>
                 ) : (
-                  <span className="text-red-600 text-sm">Loading languages...</span>
+                  <span className="text-red-600 dark:text-red-400 text-sm">Loading languages...</span>
                 )}
               </div>
               <div className="flex gap-2">
@@ -1493,7 +1518,7 @@ const ProblemSolve = () => {
                 height="100%"
                 defaultLanguage={selectedLanguage.id}
                 language={selectedLanguage.id}
-                theme="vs-light"
+                theme={isDarkMode ? "vs-dark" : "vs-light"}
                 value={code}
                 onChange={handleCodeChange}
                 options={{
@@ -1518,25 +1543,25 @@ const ProblemSolve = () => {
           </div>
           {/* Test Results Panel (compile error or test cases) */}
           {testResults && (
-            <div className="border-t border-gray-200 bg-gray-50">
-              <div className="flex items-center justify-between p-3 border-b border-gray-200">
+            <div className={`border-t ${themeColors.border} ${themeColors.accentBg}`}>
+              <div className={`flex items-center justify-between p-3 border-b ${themeColors.border}`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Testcase</span>
-                  <span className="text-sm text-gray-500">Test Result</span>
+                  <span className={`text-sm font-medium ${themeColors.text}`}>Testcase</span>
+                  <span className={`text-sm ${themeColors.textSecondary}`}>Test Result</span>
                 </div>
               </div>
               <div className="p-4 max-h-48 overflow-auto">
                 {testResults.isCompileError ? (
-                  <div className="text-red-700">
+                  <div className="text-red-700 dark:text-red-300">
                     <div className="flex items-center gap-2 mb-2">
                       <XCircle className="text-red-500" />
                       <span className="font-bold">Compile Error</span>
                     </div>
-                    <pre className="bg-red-100 border border-red-200 rounded p-3 text-sm text-red-800 whitespace-pre-wrap">
+                    <pre className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded p-3 text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap">
                       {testResults.error}
                     </pre>
                     {testResults.compileErrorDetails && testResults.compileErrorDetails.line && (
-                      <div className="mt-2 text-xs text-gray-600">Line: {testResults.compileErrorDetails.line}</div>
+                      <div className={`mt-2 text-xs ${themeColors.textSecondary}`}>Line: {testResults.compileErrorDetails.line}</div>
                     )}
                   </div>
                 ) : (
@@ -1545,7 +1570,7 @@ const ProblemSolve = () => {
                       {testResults.details && testResults.details.map((tc, idx) => (
                         <button
                           key={idx}
-                          className={`px-3 py-1 text-xs rounded border ${activeTestCase === idx ? 'bg-blue-100 border-blue-400 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-600'}`}
+                          className={`px-3 py-1 text-xs rounded border ${activeTestCase === idx ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300' : `${themeColors.accentBg} ${themeColors.border} ${themeColors.textSecondary}`}`}
                           onClick={() => setActiveTestCase(idx)}
                         >
                           Case {idx + 1}
@@ -1553,28 +1578,28 @@ const ProblemSolve = () => {
                       ))}
                     </div>
                     {testResults.details && testResults.details[activeTestCase] && (
-                      <div className="bg-white border border-gray-200 rounded p-3 mb-2">
-                        <div className="font-mono text-xs text-gray-600 mb-1">Input:</div>
-                        <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].input}</div>
-                        <div className="font-mono text-xs text-gray-600 mb-1">Expected Output:</div>
-                        <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
-                        <div className="font-mono text-xs text-gray-600 mb-1">Actual Output:</div>
-                        <div className="font-mono text-sm text-gray-800 mb-2">{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
+                      <div className={`${themeColors.navBg} border ${themeColors.border} rounded p-3 mb-2`}>
+                        <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Input:</div>
+                        <div className={`font-mono text-sm ${themeColors.text} mb-2`}>{testResults.details[activeTestCase].input}</div>
+                        <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Expected Output:</div>
+                        <div className={`font-mono text-sm ${themeColors.text} mb-2`}>{testResults.details[activeTestCase].expectedOutput || testResults.details[activeTestCase].output}</div>
+                        <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Actual Output:</div>
+                        <div className={`font-mono text-sm ${themeColors.text} mb-2`}>{testResults.details[activeTestCase].actualOutput || testResults.details[activeTestCase].output}</div>
                         {testResults.details[activeTestCase].explanation && (
                           <div className="mt-2">
-                            <div className="font-mono text-xs text-gray-600 mb-1">Explanation:</div>
-                            <div className="font-mono text-sm text-gray-700">{testResults.details[activeTestCase].explanation}</div>
+                            <div className={`font-mono text-xs ${themeColors.textSecondary} mb-1`}>Explanation:</div>
+                            <div className={`font-mono text-sm ${themeColors.text}`}>{testResults.details[activeTestCase].explanation}</div>
                           </div>
                         )}
                         {testResults.details[activeTestCase].error && (
-                          <div className="text-xs text-red-600 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
+                          <div className="text-xs text-red-600 dark:text-red-300 mt-1">Error: <span className="font-mono">{testResults.details[activeTestCase].error}</span></div>
                         )}
-                        <div className={`mt-2 px-2 py-1 rounded text-xs ${testResults.details[activeTestCase].passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{testResults.details[activeTestCase].passed ? '✓ Passed' : '✗ Failed'}</div>
+                        <div className={`mt-2 px-2 py-1 rounded text-xs ${testResults.details[activeTestCase].passed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`}>{testResults.details[activeTestCase].passed ? '✓ Passed' : '✗ Failed'}</div>
                       </div>
                     )}
-                    <div className="text-xs text-gray-500">{testResults.details && testResults.details.filter(tc => tc.passed).length}/{testResults.details ? testResults.details.length : 0} testcases passed</div>
+                    <div className={`text-xs ${themeColors.textSecondary}`}>{testResults.details && testResults.details.filter(tc => tc.passed).length}/{testResults.details ? testResults.details.length : 0} testcases passed</div>
                     {testResults.error && !testResults.passed && (
-                      <div className="text-xs text-red-600 mt-2">{testResults.error}</div>
+                      <div className="text-xs text-red-600 dark:text-red-300 mt-2">{testResults.error}</div>
                     )}
                   </>
                 )}
@@ -1585,12 +1610,12 @@ const ProblemSolve = () => {
       </div>
       {showNavConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Unsaved Code Warning</h2>
-            <p className="mb-6">You have unsaved code changes. If you leave this page, your code will be lost.<br/>Are you sure you want to exit?</p>
+          <div className={`${themeColors.navBg} rounded-lg shadow-lg p-8 max-w-md w-full border ${themeColors.border}`}>
+            <h2 className={`text-xl font-bold mb-4 ${themeColors.text}`}>Unsaved Code Warning</h2>
+            <p className={`mb-6 ${themeColors.text}`}>You have unsaved code changes. If you leave this page, your code will be lost.<br/>Are you sure you want to exit?</p>
             <div className="flex justify-end gap-4">
               <button
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className={`px-4 py-2 ${themeColors.accentBg} rounded hover:${themeColors.accentHover} ${themeColors.text}`}
                 onClick={() => setShowNavConfirm(false)}
               >
                 Continue Coding
