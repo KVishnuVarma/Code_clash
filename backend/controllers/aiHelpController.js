@@ -26,7 +26,6 @@ async function getCommonMistakes(problemId) {
 
 // POST /api/aihelp/error-fix
 exports.errorFix = async (req, res) => {
-  console.log("[AIHELP] /error-fix called with:", req.body);
   const { userId, problemId, code, language } = req.body;
   try {
     let mistake = null;
@@ -34,7 +33,6 @@ exports.errorFix = async (req, res) => {
     if (userId && problemId) {
       lastWrong = await Submission.findOne({ userId, problemId, status: { $ne: "Accepted" } }).sort({ submittedAt: -1 });
     }
-    console.log("[AIHELP] lastWrong:", lastWrong);
 
     if (lastWrong && lastWrong.testResults && lastWrong.testResults.length > 0) {
       for (const test of lastWrong.testResults) {
@@ -52,7 +50,6 @@ exports.errorFix = async (req, res) => {
 
     if (!mistake) {
       const common = await getCommonMistakes(problemId);
-      console.log("[AIHELP] common mistake:", common);
       if (common) {
         mistake = { input: null, expected: null, actual: null, error: common.error };
       }
@@ -108,21 +105,18 @@ exports.errorFix = async (req, res) => {
       userFriendlyError: userFriendlyError || null
     });
   } catch (err) {
-    console.error("[AIHELP] /error-fix error:", err);
     res.status(500).json({ error: "AI Help error-fix failed", details: err.message });
   }
 };
 
 // POST /api/aihelp/review
 exports.review = async (req, res) => {
-  console.log("[AIHELP] /review called with:", req.body);
   const { userId, problemId, code, language } = req.body;
   try {
     let lastSub = null;
     if (userId && problemId) {
       lastSub = await Submission.findOne({ userId, problemId }).sort({ submittedAt: -1 });
     }
-    console.log("[AIHELP] lastSub:", lastSub);
 
     let review = null;
     if (lastSub && lastSub.testResults && lastSub.testResults.length > 0) {
@@ -169,29 +163,24 @@ exports.review = async (req, res) => {
       correctCode: correctCode || "No accepted solution found for this problem yet."
     });
   } catch (err) {
-    console.error("[AIHELP] /review error:", err);
     res.status(500).json({ error: "AI Help review failed", details: err.message });
   }
 };
 
 // POST /api/aihelp/discussion
 exports.discussion = async (req, res) => {
-  console.log("[AIHELP] /discussion called with:", req.body);
   const { userId } = req.body;
   try {
     let name = "there";
     if (userId) {
       const user = await User.findById(userId);
-      console.log("[AIHELP] discussion user:", user);
       if (user && user.name) name = user.name;
     }
     const message = `Hi ${name}, welcome to Code Clash! How can I assist you today?`;
-    console.log("[AIHELP] Responding with message:", message);
     res.json({
       message,
     });
   } catch (err) {
-    console.error("[AIHELP] /discussion error:", err);
     res.status(500).json({ error: "AI Help discussion failed", details: err.message });
   }
 }; 

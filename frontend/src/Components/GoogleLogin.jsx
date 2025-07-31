@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 const GoogleLogin = ({ onError }) => {
   const { googleLogin } = useAuth();
   const { getThemeColors } = useTheme();
+  // eslint-disable-next-line no-unused-vars
   const themeColors = getThemeColors();
   const [isHovered, setIsHovered] = useState(false);
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
@@ -15,10 +16,8 @@ const GoogleLogin = ({ onError }) => {
     // Check if Google OAuth is loaded
     const checkGoogleOAuth = () => {
       if (window.google && window.google.accounts) {
-        console.log("✅ Google OAuth is loaded and available");
         setIsGoogleLoaded(true);
       } else {
-        console.log("⏳ Google OAuth not yet loaded, retrying...");
         setTimeout(checkGoogleOAuth, 1000);
       }
     };
@@ -28,31 +27,22 @@ const GoogleLogin = ({ onError }) => {
 
   const handleSuccess = async (credentialResponse) => {
     try {
-      console.log('✅ Google OAuth successful, processing credential...');
-      console.log('📋 Credential response:', credentialResponse);
       await googleLogin(credentialResponse.credential);
     } catch (error) {
-      console.error('❌ Google login error:', error);
       if (onError) {
         onError(error.message || 'Google login failed. Please try again.');
       }
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleError = (error) => {
-    console.error('❌ Google OAuth error:', error);
-    console.error('❌ Error details:', {
-      error: error.error,
-      error_description: error.error_description,
-      error_uri: error.error_uri
-    });
     if (onError) {
       onError('Google login failed. Please try again.');
     }
   };
 
   const handleCustomClick = () => {
-    console.log("🔘 Custom Google button clicked - triggering OAuth");
     // Find and click the actual Google OAuth button
     if (googleButtonRef.current) {
       const googleButton = googleButtonRef.current.querySelector('[role="button"]');

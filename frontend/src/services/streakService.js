@@ -1,8 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+
 export const getUserStreak = async (token) => {
   try {
-    console.log('Fetching streak data with token:', token ? 'Token exists' : 'No token');
     const response = await fetch(`${API_BASE_URL}/api/streak/user`, {
       method: 'GET',
       headers: {
@@ -10,8 +10,6 @@ export const getUserStreak = async (token) => {
         'x-auth-token': token
       }
     });
-
-    console.log('Streak response status:', response.status);
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -20,7 +18,6 @@ export const getUserStreak = async (token) => {
     }
 
     const data = await response.json();
-    console.log('Streak data received:', data);
     return data.streak;
   } catch (error) {
     console.error('Error fetching streak:', error);
@@ -79,21 +76,17 @@ export const useStreakFreeze = async (token) => {
 };
 
 export const getStreakLeaderboard = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/streak/leaderboard`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch leaderboard');
+  const response = await fetch(`${API_BASE_URL}/api/streak/leaderboard`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
     }
+  });
 
-    const data = await response.json();
-    return data.leaderboard;
-  } catch (error) {
-    throw error;
+  if (!response.ok) {
+    throw new Error('Failed to fetch leaderboard');
   }
-}; 
+
+  const data = await response.json();
+  return data.leaderboard;
+};

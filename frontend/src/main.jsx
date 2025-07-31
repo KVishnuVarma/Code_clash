@@ -8,34 +8,17 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-// Validate Google Client ID
-if (!GOOGLE_CLIENT_ID) {
-  console.error("❌ VITE_GOOGLE_CLIENT_ID is not set in environment variables!");
-  console.error("Please set VITE_GOOGLE_CLIENT_ID in your deployment environment variables.");
-} else {
-  console.log("✅ Google OAuth Client ID configured:", GOOGLE_CLIENT_ID.substring(0, 20) + "...");
-}
-
-// Check if we're in production and backend URL is set
+// Environment variables validation removed
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-if (!BACKEND_URL) {
-  console.error("❌ VITE_BACKEND_URL is not set in environment variables!");
-  console.error("Please set VITE_BACKEND_URL in your deployment environment variables.");
-} else {
-  console.log("✅ Backend URL configured:", BACKEND_URL);
-}
-
-console.log("🌐 Current environment:", import.meta.env.MODE);
-console.log("🔗 Current URL:", window.location.href);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <GoogleOAuthProvider 
     clientId={GOOGLE_CLIENT_ID || ""}
+    // eslint-disable-next-line no-unused-vars
     onScriptLoadError={(error) => {
-      console.error("❌ Google OAuth script failed to load:", error);
+      // Error handling removed
     }}
     onScriptLoadSuccess={() => {
-      console.log("✅ Google OAuth script loaded successfully");
     }}
   >
     <BrowserRouter>

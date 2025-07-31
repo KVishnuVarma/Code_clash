@@ -13,7 +13,7 @@ export async function submitSolution({ userId, problemId, code, language, violat
 }
 
 export async function getUserSubmissions(userId) {
-  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/submissions/history?userId=${userId}`);
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/submissions/history?userId=${userId}&limit=100`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch submissions');
@@ -40,5 +40,15 @@ export async function getProblemParticipants(problemId) {
   }
   const data = await response.json();
   return data.participants || [];
+}
+
+export async function getProblemById(problemId) {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/problems/${problemId}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch problem');
+  }
+  const data = await response.json();
+  return data; // The backend returns the problem directly, not wrapped in a problem property
 }
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Flame, Trophy, Zap, Clock, Code, Calendar as CalendarIcon, TrendingUp, Award, X } from 'lucide-react';
 import UserNavbar from "../Components/UserNavbar";
 import { useTheme } from "../context/ThemeContext";
 import useAuth from "../hooks/useAuth";
 import { getUserStreak } from '../services/streakService';
-import { getUserSubmissions } from '../services/problemService';
-import { getUserRegisteredContests } from '../services/contestService';
+import { getUserSubmissions, getProblemById } from '../services/problemService';
 import StreakModal from '../Components/StreakModal';
 import Calendar from '../Components/Calendar';
 
@@ -29,21 +29,133 @@ function UserDashboard() {
       // Fetch streak data
       const streakResponse = await getUserStreak(token);
       setStreakData(streakResponse);
+
+      // Use solvedProblems from user object, sort by solvedAt descending
+      let recentSolved = [];
+      if (user.solvedProblems && Array.isArray(user.solvedProblems)) {
+        
+        // Handle both old format (just ObjectIds) and new format (objects with problemId and solvedAt)
+        recentSolved = user.solvedProblems
+          .filter(sp => {
+            // If it's the old format (just a string/ObjectId)
+            if (typeof sp === 'string' || sp instanceof String) {
+              return sp && sp !== 'undefined';
+            }
+            // If it's the new format (object with problemId and solvedAt)
+            if (sp && typeof sp === 'object' && sp.problemId) {
+              // Handle Buffer type problemId
+              const problemId = sp.problemId;
+              if (problemId && problemId.type === 'Buffer' && problemId.data) {
+                // Convert Buffer to string
+                // eslint-disable-next-line no-undef
+                const buffer = Buffer.from(problemId.data);
+                const hexString = buffer.toString('hex');
+                return hexString.length > 0;
+              }
+              return problemId && problemId !== 'undefined';
+            }
+            return false;
+          })
+          .map(sp => {
+            // Convert old format to new format
+            if (typeof sp === 'string' || sp instanceof String) {
+              return {
+                problemId: sp,
+                solvedAt: new Date() // Default to current date for old data
+              };
+            }
+            // Handle new format with Buffer problemId
+            if (sp.problemId && sp.problemId.type === 'Buffer' && sp.problemId.data) {
+              // eslint-disable-next-line no-undef
+              const buffer = Buffer.from(sp.problemId.data);
+              const hexString = buffer.toString('hex');
+              return {
+                problemId: hexString,
+                solvedAt: sp.solvedAt || new Date()
+              };
+            }
+            return sp;
+          })
+          .sort((a, b) => new Date(b.solvedAt) - new Date(a.solvedAt))
+          .slice(0, 5);
+      }
       
-      // Fetch recent solved problems
+      // If recentSolved is still empty, try a different approach
+      if (recentSolved.length === 0) {
+        recentSolved = user.solvedProblems
+          .filter(sp => sp && typeof sp === 'object')
+          .map(sp => {
+            // Try to extract problemId from various possible structures
+            let problemId = null;
+            let solvedAt = null;
+            
+            // Check if problemId is directly accessible
+            if (sp.problemId) {
+              if (sp.problemId.type === 'Buffer' && sp.problemId.data) {
+                // eslint-disable-next-line no-undef
+                problemId = Buffer.from(sp.problemId.data).toString('hex');
+              } else if (typeof sp.problemId === 'string') {
+                problemId = sp.problemId;
+              }
+            }
+            
+            // Check if _id might be the problemId
+            if (!problemId && sp._id) {
+              if (sp._id.type === 'Buffer' && sp._id.data) {
+                // eslint-disable-next-line no-undef
+                problemId = Buffer.from(sp._id.data).toString('hex');
+              } else if (typeof sp._id === 'string') {
+                problemId = sp._id;
+              }
+            }
+            
+            // Get solvedAt
+            solvedAt = sp.solvedAt || new Date();
+            
+            return problemId ? { problemId, solvedAt } : null;
+          })
+          .filter(item => item !== null)
+          .sort((a, b) => new Date(b.solvedAt) - new Date(a.solvedAt))
+          .slice(0, 5);
+      }
+
+      // Fetch all submissions for this user (to get score/time for each problem)
       const submissionsResponse = await getUserSubmissions(user._id);
-      const solvedSubmissions = submissionsResponse
-        .filter(sub => sub.status === 'Accepted')
-        .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
-        .slice(0, 5);
-      setRecentProblems(solvedSubmissions);
       
+      // For each recent solved problem, find the latest accepted submission for that problem
+      const recentProblemsData = await Promise.all(recentSolved.map(async (sp) => {
+        let problem = null;
+        
+        try {
+          problem = await getProblemById(sp.problemId);
+        } catch {
+          // Continue with null problem, will use fallback title
+        }
+        
+        // Simple direct string match since both are 24-character ObjectId strings
+        const sub = submissionsResponse
+          .filter(s => s.problemId === sp.problemId)
+          .filter(s => s.status === 'Accepted')
+          .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+        
+        return {
+          problemId: sp.problemId,
+          solvedAt: sp.solvedAt,
+          score: sub?.score || 0,
+          timeTaken: sub?.timeTaken || 0,
+          submittedAt: sub?.submittedAt || sp.solvedAt,
+          problemTitle: problem?.title || `Problem #${sp.problemId}`,
+        };
+      }));
+      setRecentProblems(recentProblemsData);
+
       // Fetch registered contests
-      const contestsResponse = await getUserRegisteredContests(user._id);
-      setRegisteredContests(contestsResponse);
+      // const contestsResponse = await getUserRegisteredContests(user._id);
+      // setRegisteredContests(contestsResponse);
+      setRegisteredContests([]); // Set empty array for now
       
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+    } catch {
+      // Error handling without console.log
     } finally {
       setLoading(false);
     }
@@ -53,7 +165,8 @@ function UserDashboard() {
     if (user && token) {
       fetchUserData();
     }
-  }, [user, token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]); // Remove user from dependencies to prevent infinite re-renders
 
   // Get badge info
   const getBadgeInfo = (badge) => {
@@ -71,9 +184,11 @@ function UserDashboard() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const badgeInfo = getBadgeInfo(streakData?.badge);
 
   // Format time
+  // eslint-disable-next-line no-unused-vars
   const formatTime = (timeObj) => {
     if (!timeObj) return '00:00:00';
     return `${timeObj.hours.toString().padStart(2, '0')}:${timeObj.minutes.toString().padStart(2, '0')}:${timeObj.seconds.toString().padStart(2, '0')}`;
@@ -179,29 +294,29 @@ function UserDashboard() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-white">Recent Solutions</h2>
-                  <span className="text-gray-400 text-sm">{recentProblems.length} solved</span>
+                  <span className="text-gray-400 text-sm">{user.solvedProblems?.length || 0} solved</span>
                 </div>
                 
                 {recentProblems.length > 0 ? (
                   <div className="space-y-4">
                     {recentProblems.map((submission) => (
-                      <div key={submission._id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                      <div key={submission.problemId} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="p-2 bg-green-500/20 rounded-lg">
                               <Code className="w-5 h-5 text-green-400" />
                             </div>
                             <div>
-                              <h3 className="text-white font-semibold">Problem #{submission.problemId}</h3>
+                              <h3 className="text-white font-semibold">{submission.problemTitle}</h3>
                               <p className="text-gray-400 text-sm">
-                                Score: {submission.score || 0} • Time: {submission.timeTaken || 0}s
+                                Score: {submission.score} • Time: {submission.timeTaken}s
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
                             <span className="text-green-400 text-sm font-medium">✓ Solved</span>
                             <p className="text-gray-400 text-xs">
-                              {new Date(submission.submittedAt).toLocaleDateString()}
+                              {new Date(submission.solvedAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>

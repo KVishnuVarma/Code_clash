@@ -22,7 +22,6 @@
         if (!userId) {
             return res.status(400).json({ error: 'User ID required for testing' });
         }
-        console.log('🧪 TEST VIOLATION TRIGGERED for user:', userId);
         // Call the reportViolation logic directly
         reportViolation(req, res);
     });

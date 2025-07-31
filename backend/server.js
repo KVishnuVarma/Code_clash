@@ -28,16 +28,15 @@ const allowedOrigins = [
     process.env.FRONTEND_URL || deployedFrontend,
     deployedFrontend,
     localFrontend,
-    "http://localhost:3000", // Additional local development port
-    "https://codeclashv.vercel.app", // Added deployed frontend URL
-    "https://accounts.google.com", // Allow Google OAuth
-    "https://oauth2.googleapis.com", // Allow Google OAuth endpoints
-    "https://www.googleapis.com", // Allow Google APIs
-    "https://google.com", // Allow Google domains
-    "https://www.google.com" // Allow Google domains
+    "http://localhost:3000", 
+    "https://codeclashv.vercel.app", 
+    "https://accounts.google.com", 
+    "https://oauth2.googleapis.com", 
+    "https://www.googleapis.com", 
+    "https://google.com", 
+    "https://www.google.com" 
 ];
 
-console.log("🌐 Allowed CORS origins:", allowedOrigins);
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -47,10 +46,8 @@ app.use(cors({
             return callback(null, true);
         }
         
-        console.log("🌐 Checking origin:", origin);
         
         if (allowedOrigins.indexOf(origin) !== -1) {
-            console.log("✅ Origin allowed:", origin);
             callback(null, true);
         } else {
             console.warn(`⚠️ CORS blocked origin: ${origin}`);

@@ -18,11 +18,8 @@ router.put("/update/:id", updateProblem);
 // 🛠 DELETE route to remove a problem by ID
 router.delete("/:id", async (req, res) => {
     try {
-        console.log("🔹 Received DELETE request for ID:", req.params.id);
-
         // 🔹 Validate MongoDB ID format before proceeding
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            console.log("❌ Invalid ID format");
             return res.status(400).json({ error: "Invalid problem ID format" });
         }
 
@@ -30,15 +27,12 @@ router.delete("/:id", async (req, res) => {
         const problem = await Problem.findByIdAndDelete(req.params.id);
 
         if (!problem) {
-            console.log("⚠️ Problem not found");
             return res.status(404).json({ error: "Problem not found" });
         }
 
-        console.log("✅ Problem deleted successfully:", problem);
         res.json({ message: "Problem deleted successfully" });
 
     } catch (error) {
-        console.error("❌ Error deleting problem:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });

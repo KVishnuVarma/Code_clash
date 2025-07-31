@@ -149,10 +149,21 @@ const submitCode = async (req, res) => {
           },
         });
         // Update user points and solvedProblems
-        await User.findByIdAndUpdate(userId, {
-          $inc: { points: score },
-          $addToSet: { solvedProblems: problemId },
-        });
+        // Only add to solvedProblems if not already present
+        const user = await User.findById(userId);
+        if (user) {
+          const alreadySolvedProblem = user.solvedProblems.find(
+            (sp) => sp.problemId.toString() === problemId.toString()
+          );
+          if (!alreadySolvedProblem) {
+            user.points += score;
+            user.solvedProblems.push({ problemId, solvedAt: new Date() });
+            await user.save();
+          } else {
+            user.points += score;
+            await user.save();
+          }
+        }
         
         // Update streak when user solves a problem
         await updateStreak(userId, problemId, score, problem.topics || []);
@@ -218,9 +229,6 @@ const submitCode = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Submission error:", error);
-    console.error("Submission error stack:", error.stack);
-    console.error("Submission request body:", req.body);
     // Only return 500 for true server errors
     res.status(500).json({ error: error.message });
   }
@@ -252,7 +260,6 @@ const getSubmissionHistory = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Error fetching submission history:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -277,7 +284,6 @@ const getSubmissionDetails = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching submission details:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -323,7 +329,6 @@ const getProblemParticipants = async (req, res) => {
     }));
     res.json({ participants });
   } catch (error) {
-    console.error('Error fetching problem participants:', error);
     res.status(500).json({ error: error.message });
   }
 };

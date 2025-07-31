@@ -30,56 +30,36 @@ const adminMiddleware = (req, res, next) => {
 // Google OAuth authentication
 router.post('/google', async (req, res) => {
     try {
-        console.log('🔐 Google OAuth request received');
-        console.log('📥 Request headers:', req.headers);
-        console.log('📥 Request body:', req.body);
-        
         const { credential } = req.body;
         
         if (!credential) {
-            console.log('❌ No credential provided');
             return res.status(400).json({ message: 'Google credential is required' });
         }
 
-        console.log('📝 Decoding Google credential...');
         // Decode the JWT token from Google
         const decoded = jwt.decode(credential);
         
         if (!decoded) {
-            console.log('❌ Invalid Google credential format');
             return res.status(400).json({ message: 'Invalid Google credential' });
         }
-
-        console.log('✅ Google credential decoded successfully');
-        console.log('📋 Decoded data:', { 
-            email: decoded.email, 
-            name: decoded.name, 
-            sub: decoded.sub,
-            picture: decoded.picture 
-        });
         
         const { email, name, picture, sub: googleId } = decoded;
 
-        console.log(`🔍 Checking if user exists: ${email}`);
         // Check if user already exists
         let user = await User.findOne({ email });
 
         if (user) {
-            console.log('✅ User found, checking status...');
             // User exists, check if suspended
             if (user.isSuspended) {
-                console.log('❌ User is suspended');
                 return res.status(403).json({ message: "Your account is suspended. Contact admin." });
             }
 
             // Update user's Google ID if not set
             if (!user.googleId) {
-                console.log('🔄 Updating user Google ID...');
                 user.googleId = googleId;
                 await user.save();
             }
         } else {
-            console.log('🆕 Creating new user...');
             // Create new user
             user = new User({
                 name,
@@ -91,19 +71,15 @@ router.post('/google', async (req, res) => {
                 profilePicture: picture
             });
             await user.save();
-            console.log('✅ New user created successfully');
         }
 
-        console.log('📝 Logging user activity...');
         // Log the activity
         user.activityLog.push(`User logged in with Google at ${new Date().toISOString()}`);
         await user.save();
 
-        console.log('🔑 Generating JWT token...');
         // Generate JWT token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-        console.log('✅ Google authentication successful, sending response...');
         const responseData = { 
             token, 
             user: { 
@@ -119,11 +95,8 @@ router.post('/google', async (req, res) => {
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
         };
         
-        console.log('📤 Sending response:', responseData);
         res.json(responseData);
     } catch (err) {
-        console.error("❌ Error in Google authentication:", err);
-        console.error("❌ Error stack:", err.stack);
         res.status(500).json({ message: 'Server Error: ' + err.message });
     }
 });
@@ -222,7 +195,6 @@ router.post('/login', [
             redirect: user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'
         });
     } catch (err) {
-        console.error("Error logging in:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -236,7 +208,6 @@ router.get('/user', authMiddleware, async (req, res) => {
         }
         res.json(user);
     } catch (err) {
-        console.error("Error fetching user:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -246,7 +217,6 @@ router.get('/admin/users', authMiddleware, adminMiddleware, async (req, res) => 
         const users = await User.find().select('-password');
         res.json(users);
     } catch (err) {
-        console.error("Error fetching users:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -270,7 +240,6 @@ router.put('/admin/suspend/:userId', authMiddleware, adminMiddleware, async (req
 
         return res.status(200).json({ message: "User status updated", user });
     } catch (error) {
-        console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 });
@@ -279,7 +248,6 @@ router.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         res.json({ message: "Welcome, Admin!" });
     } catch (err) {
-        console.error("Error accessing admin route:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -289,7 +257,6 @@ router.get("/api/leaderboard", async (req, res) => {
         const leaderboard = await User.find({ role: "user" }).sort({ points: -1 }); // ✅ Exclude admins
         res.json(leaderboard);
     } catch (error) {
-        console.error("Error fetching leaderboard:", error.message);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 });
@@ -323,7 +290,6 @@ router.put('/theme', authMiddleware, async (req, res) => {
             darkMode: user.darkMode
         });
     } catch (err) {
-        console.error("Error updating theme preferences:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -340,7 +306,6 @@ router.get('/theme', authMiddleware, async (req, res) => {
             darkMode: user.darkMode
         });
     } catch (err) {
-        console.error("Error fetching theme preferences:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });

@@ -113,9 +113,7 @@ const unsuspendUser = async (req, res) => {
 const reportViolation = async (req, res) => {
     try {
         const { userId, examId, violation, timestamp } = req.body;
-        console.log('🚨 VIOLATION REPORTED:', { userId, examId, violation, timestamp });
         if (!userId || !violation) {
-            console.log('❌ Missing userId or violation data');
             return res.status(400).json({ error: 'User ID and violation are required.' });
         }
         // Store violation in DB
@@ -125,13 +123,9 @@ const reportViolation = async (req, res) => {
         if (user) {
             user.isSuspended = true;
             await user.save();
-            console.log('✅ User suspended successfully. New isSuspended:', user.isSuspended);
-        } else {
-            console.log('❌ User not found with ID:', userId);
         }
         res.json({ message: 'Violation reported, stored, and user suspended.' });
     } catch (error) {
-        console.error('❌ Error in reportViolation:', error);
         res.status(500).json({ error: 'Server error', details: error.message });
     }
 };
@@ -159,7 +153,6 @@ const submitContactMessage = async (req, res) => {
         });
         res.json({ message: 'Contact message submitted successfully. Admin will review your case.', contactMessage });
     } catch (error) {
-        console.error('❌ Error in submitContactMessage:', error);
         res.status(500).json({ error: 'Server error', details: error.message });
     }
 };

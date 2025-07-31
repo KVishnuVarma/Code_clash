@@ -76,7 +76,6 @@ const updateStreak = async (userId, problemId, pointsEarned, problemTopics = [])
         await user.save();
         return user.streak;
     } catch (error) {
-        console.error('Error updating streak:', error);
         return null;
     }
 };
@@ -85,12 +84,11 @@ const updateStreak = async (userId, problemId, pointsEarned, problemTopics = [])
 const getUserStreak = async (req, res) => {
     try {
         const userId = req.user.id;
-        console.log('Getting streak for user:', userId);
+        // Getting streak for user
         
         const user = await User.findById(userId);
         
         if (!user) {
-            console.log('User not found:', userId);
             return res.status(404).json({ error: 'User not found' });
         }
 
@@ -159,10 +157,9 @@ const getUserStreak = async (req, res) => {
             await user.save();
         }
 
-        console.log('Sending streak data:', streakData);
+        // Sending streak data
         res.json({ success: true, streak: streakData });
     } catch (error) {
-        console.error('Error fetching user streak:', error);
         res.status(500).json({ error: 'Failed to fetch streak data' });
     }
 };

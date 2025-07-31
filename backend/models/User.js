@@ -11,7 +11,10 @@ const UserSchema = new mongoose.Schema({
     googleId: String, // Google OAuth ID
     profilePicture: String, // Google profile picture URL
     points: { type: Number, default: 0 },
-    solvedProblems: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Problem', default: [] }],
+    solvedProblems: [{
+        problemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Problem' },
+        solvedAt: { type: Date, default: Date.now }
+    }],
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     isSuspended: { type: Boolean, default: false },
     activityLog: [{ type: String, default: [] }],

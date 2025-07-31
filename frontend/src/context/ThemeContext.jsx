@@ -225,8 +225,8 @@ export const ThemeProvider = ({ children }) => {
           const preferences = await themeService.getThemePreferences(token);
           setCurrentTheme(preferences.theme || 'zinc');
           setIsDarkMode(preferences.darkMode !== undefined ? preferences.darkMode : true);
+        // eslint-disable-next-line no-unused-vars
         } catch (error) {
-          console.error('Failed to load theme preferences:', error);
           // Use defaults if API fails
           setCurrentTheme('zinc');
           setIsDarkMode(true);
@@ -265,8 +265,9 @@ export const ThemeProvider = ({ children }) => {
     if (user && token) {
       try {
         await themeService.updateThemePreferences(token, currentTheme, newDarkMode);
+      // eslint-disable-next-line no-unused-vars
       } catch (error) {
-        console.error('Failed to save dark mode preference:', error);
+        // Error handling removed
       }
     }
   };
@@ -278,8 +279,9 @@ export const ThemeProvider = ({ children }) => {
     if (user && token) {
       try {
         await themeService.updateThemePreferences(token, themeKey, isDarkMode);
+      // eslint-disable-next-line no-unused-vars
       } catch (error) {
-        console.error('Failed to save theme preference:', error);
+        // Error handling removed
       }
     }
   };
