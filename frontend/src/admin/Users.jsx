@@ -90,7 +90,7 @@ const Users = () => {
         }
     };
 
-    if (loading) return <p className="text-center text-blue-400 text-lg animate-pulse">Loading users...</p>;
+    if (loading) return <p className="text-center text-dark-400 text-lg animate-pulse">Loading users...</p>;
     if (error) return <p className="text-center text-red-500 font-bold">{error}</p>;
 
     return (

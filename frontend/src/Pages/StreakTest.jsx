@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getUserStreak, useStreakFreeze } from '../services/streakService';
@@ -25,6 +26,7 @@ const StreakTest = () => {
   const testUseFreeze = async () => {
     try {
       setLoading(true);
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       await useStreakFreeze(token);
       toast.success('Streak freeze used successfully!');
       await testGetStreak(); // Refresh data

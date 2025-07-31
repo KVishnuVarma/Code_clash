@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Zap, Clock, Code, Calendar as CalendarIcon, TrendingUp, Award, X } from 'lucide-react';
+import { Flame, Trophy, Zap, Clock, Code, Calendar as CalendarIcon, TrendingUp, Award, X, Star, Target, Rocket } from 'lucide-react';
 import UserNavbar from "../Components/UserNavbar";
 import { useTheme } from "../context/ThemeContext";
 import useAuth from "../hooks/useAuth";
@@ -17,7 +17,6 @@ function UserDashboard() {
   
   const [streakData, setStreakData] = useState(null);
   const [recentProblems, setRecentProblems] = useState([]);
-  const [registeredContests, setRegisteredContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showStreakModal, setShowStreakModal] = useState(false);
 
@@ -149,11 +148,6 @@ function UserDashboard() {
       }));
       setRecentProblems(recentProblemsData);
 
-      // Fetch registered contests
-      // const contestsResponse = await getUserRegisteredContests(user._id);
-      // setRegisteredContests(contestsResponse);
-      setRegisteredContests([]); // Set empty array for now
-      
     } catch {
       // Error handling without console.log
     } finally {
@@ -194,26 +188,16 @@ function UserDashboard() {
     return `${timeObj.hours.toString().padStart(2, '0')}:${timeObj.minutes.toString().padStart(2, '0')}:${timeObj.seconds.toString().padStart(2, '0')}`;
   };
 
-  // Get contest status color
-  const getContestStatusColor = (status) => {
-    switch (status) {
-      case 'Upcoming': return 'text-blue-400';
-      case 'Ongoing': return 'text-green-400';
-      case 'Completed': return 'text-gray-400';
-      default: return 'text-gray-400';
-    }
-  };
-
   if (loading) {
     return (
       <div className={`min-h-screen ${themeColors.bg}`}>
         <UserNavbar />
         <div className="transition-all duration-300 pt-20 p-6">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-700 rounded w-1/3"></div>
+            <div className={`h-8 ${themeColors.accentBg} rounded w-1/3`}></div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-32 bg-gray-700 rounded-xl"></div>
+                <div key={i} className={`h-32 ${themeColors.accentBg} rounded-xl`}></div>
               ))}
             </div>
           </div>
@@ -233,56 +217,110 @@ function UserDashboard() {
             animate={{ y: 0, opacity: 1 }}
             className="mb-8"
           >
-            <h1 className="text-4xl font-bold text-white mb-2">Welcome back, {user?.name}!</h1>
-            <p className="text-gray-400">Track your progress and stay updated with your coding journey</p>
+            <h1 className={`text-4xl font-bold ${themeColors.text} mb-2`}>Welcome back, {user?.name}!</h1>
+            <p className={themeColors.textSecondary}>Track your progress and stay updated with your coding journey</p>
           </motion.div>
 
           {/* Main Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Left Side - Contests and Recent Problems */}
+            {/* Left Side - Hero Section and Recent Problems */}
             <div className="lg:col-span-2 space-y-6">
               
-              {/* Registered Contests */}
+              {/* Hero Section - Redesigned with animations */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700"
+                className={`${themeColors.accentBg} rounded-xl p-8 text-center relative overflow-hidden`}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-white">Your Contests</h2>
-                  <span className="text-gray-400 text-sm">{registeredContests.length} registered</span>
-                </div>
+                {/* Animated background elements */}
+                <motion.div
+                  animate={{ 
+                    rotate: 360,
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{ 
+                    duration: 20,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full -translate-y-16 translate-x-16"
+                />
                 
-                {registeredContests.length > 0 ? (
-                  <div className="space-y-4">
-                    {registeredContests.map((contest) => (
-                      <div key={contest._id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-white font-semibold">{contest.title}</h3>
-                            <p className="text-gray-400 text-sm">Difficulty: {contest.difficulty}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className={`font-medium ${getContestStatusColor(contest.status)}`}>
-                              {contest.status}
-                            </span>
-                            <p className="text-gray-400 text-xs">
-                              {new Date(contest.startTime).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Award className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">No contests registered yet</p>
-                    <p className="text-gray-500 text-sm">Join contests to compete with others!</p>
-                  </div>
-                )}
+                <motion.div
+                  animate={{ 
+                    rotate: -360,
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{ 
+                    duration: 25,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-500/10 to-blue-500/10 rounded-full translate-y-12 -translate-x-12"
+                />
+
+                <div className="relative z-10">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                    className="mb-6"
+                  >
+                    <div className="relative inline-block">
+                      <Code className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          rotate: [0, 5, -5, 0]
+                        }}
+                        transition={{ 
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute -top-2 -right-2"
+                      >
+                        <Star className="w-6 h-6 text-yellow-400" />
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.h2 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className={`text-3xl font-bold ${themeColors.text} mb-2 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 bg-clip-text text-transparent`}
+                  >
+                    Clash with Code, Rise with Skill
+                  </motion.h2>
+                  
+                  <motion.p 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className={`${themeColors.textSecondary} text-lg`}
+                  >
+                    Your Journey to the Top Begins Here.
+                  </motion.p>
+                  
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="mt-6"
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-gray to-gray-800 text-white px-6 py-3 rounded-full font-medium cursor-pointer"
+                    >
+                      <Rocket className="w-5 h-5" />
+                      <span>Start Coding Now</span>
+                    </motion.div>
+                  </motion.div>
+                </div>
               </motion.div>
 
               {/* Recent Solved Problems */}
@@ -290,123 +328,154 @@ function UserDashboard() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700"
+                className={`${themeColors.accentBg} rounded-xl p-6`}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-white">Recent Solutions</h2>
-                  <span className="text-gray-400 text-sm">{user.solvedProblems?.length || 0} solved</span>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className={`text-xl font-semibold ${themeColors.text}`}>Recent Solutions</h2>
+                  <span className={`${themeColors.textSecondary} text-sm`}>{user.solvedProblems?.length || 0} solved</span>
                 </div>
                 
                 {recentProblems.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentProblems.map((submission) => (
-                      <div key={submission.problemId} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                  <div className="space-y-3">
+                    {recentProblems.map((submission, index) => (
+                      <motion.div 
+                        key={submission.problemId} 
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 * index }}
+                        className={`${themeColors.bg} rounded-lg p-4 hover:shadow-lg transition-all duration-300`}
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-green-500/20 rounded-lg">
-                              <Code className="w-5 h-5 text-green-400" />
+                            <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                              <Code className="w-4 h-4 text-green-400" />
                             </div>
                             <div>
-                              <h3 className="text-white font-semibold">{submission.problemTitle}</h3>
-                              <p className="text-gray-400 text-sm">
+                              <h3 className={`${themeColors.text} font-medium text-sm`}>{submission.problemTitle}</h3>
+                              <p className={`${themeColors.textSecondary} text-xs`}>
                                 Score: {submission.score} • Time: {submission.timeTaken}s
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="text-green-400 text-sm font-medium">✓ Solved</span>
-                            <p className="text-gray-400 text-xs">
+                            <span className="text-green-400 text-xs font-medium">✓ Solved</span>
+                            <p className={`${themeColors.textSecondary} text-xs`}>
                               {new Date(submission.solvedAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Code className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">No problems solved yet</p>
-                    <p className="text-gray-500 text-sm">Start solving problems to build your streak!</p>
+                    <Code className={`w-10 h-10 ${themeColors.textSecondary} mx-auto mb-3`} />
+                    <p className={`${themeColors.textSecondary} text-sm`}>No problems solved yet</p>
+                    <p className={`${themeColors.textSecondary} text-xs`}>Start solving problems to build your streak!</p>
                   </div>
                 )}
               </motion.div>
             </div>
 
-            {/* Right Side - Calendar with Streak */}
+            {/* Right Side - Compact Streak and Calendar */}
             <div className="space-y-6">
               
-              {/* Streak Summary Card */}
+              {/* Compact Streak Card */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="bg-gradient-to-br from-orange-600/20 to-red-600/20 backdrop-blur-sm rounded-xl p-6 border border-orange-500/30 cursor-pointer hover:from-orange-600/30 hover:to-red-600/30 transition-all duration-300"
+                className={`${themeColors.accentBg} rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-300`}
                 onClick={() => setShowStreakModal(true)}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-orange-500/20 rounded-lg">
-                      <Flame className="w-6 h-6 text-orange-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold">Current Streak</h3>
-                      <p className="text-2xl font-bold text-white">{streakData?.currentStreak || 0} days</p>
-                    </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Flame className="w-5 h-5 text-orange-400" />
+                    <h3 className={`${themeColors.text} font-medium text-sm`}>Current Streak</h3>
                   </div>
-                  <div className="text-right">
-                    <p className="text-gray-400 text-sm">Click to view details</p>
-                    <p className="text-orange-400 text-xs">→</p>
-                  </div>
+                  <p className={`${themeColors.textSecondary} text-xs`}>Click for details</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <p className="text-white font-semibold">{streakData?.longestStreak || 0}</p>
-                    <p className="text-gray-400 text-xs">Longest</p>
+                <p className={`text-2xl font-bold ${themeColors.text} mb-3`}>{streakData?.currentStreak || 0} days</p>
+                
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className={`${themeColors.bg} rounded-lg p-2`}>
+                    <p className={`${themeColors.text} font-semibold text-sm`}>{streakData?.longestStreak || 0}</p>
+                    <p className={`${themeColors.textSecondary} text-xs`}>Longest</p>
                   </div>
-                  <div>
-                    <p className="text-white font-semibold">{streakData?.streakFreezes || 0}</p>
-                    <p className="text-gray-400 text-xs">Freezes</p>
+                  <div className={`${themeColors.bg} rounded-lg p-2`}>
+                    <p className={`${themeColors.text} font-semibold text-sm`}>{streakData?.streakFreezes || 0}</p>
+                    <p className={`${themeColors.textSecondary} text-xs`}>Freezes</p>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Calendar */}
+              {/* Compact Calendar */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
+                className={`${themeColors.accentBg} rounded-xl p-4`}
               >
-                <Calendar className="w-full" />
+                <div className="flex items-center mb-3">
+                  <CalendarIcon className="w-5 h-5 text-blue-400 mr-2" />
+                  <h3 className={`${themeColors.text} font-medium text-sm`}>Activity Calendar</h3>
+                </div>
+                <div className="scale-90 origin-top-left">
+                  <Calendar className="w-full" />
+                </div>
               </motion.div>
 
-              {/* Quick Stats */}
+              {/* Today's Progress - Enhanced with metrics */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700"
+                className={`${themeColors.accentBg} rounded-xl p-4`}
               >
-                <h3 className="text-white font-semibold mb-4 flex items-center">
+                <h3 className={`${themeColors.text} font-medium mb-4 flex items-center text-sm`}>
                   <TrendingUp className="w-5 h-5 text-green-500 mr-2" />
-                  Quick Stats
+                  Today's Progress
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Total Points</span>
-                    <span className="text-white font-semibold">{user?.points || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Problems Solved</span>
-                    <span className="text-white font-semibold">{user?.solvedProblems?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Today's Progress</span>
-                    <span className="text-white font-semibold">
-                      {streakData?.todaySolved ? '✅' : '❌'}
-                    </span>
-                  </div>
+                
+                {/* Progress Status */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className={`${themeColors.textSecondary} text-sm`}>Completed Today</span>
+                  <motion.span 
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.5 }}
+                    className="text-2xl"
+                  >
+                    {streakData?.todaySolved ? '✅' : '❌'}
+                  </motion.span>
+                </div>
+                
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className={`${themeColors.bg} rounded-lg p-3 text-center`}
+                  >
+                    <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-1" />
+                    <p className={`${themeColors.text} font-semibold text-sm`}>{user?.points || 0}</p>
+                    <p className={`${themeColors.textSecondary} text-xs`}>Points</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className={`${themeColors.bg} rounded-lg p-3 text-center`}
+                  >
+                    <Target className="w-6 h-6 text-green-500 mx-auto mb-1" />
+                    <p className={`${themeColors.text} font-semibold text-sm`}>{user?.solvedProblems?.length || 0}</p>
+                    <p className={`${themeColors.textSecondary} text-xs`}>Solved</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className={`${themeColors.bg} rounded-lg p-3 text-center`}
+                  >
+                    <Flame className="w-6 h-6 text-orange-500 mx-auto mb-1" />
+                    <p className={`${themeColors.text} font-semibold text-sm`}>{streakData?.currentStreak || 0}</p>
+                    <p className={`${themeColors.textSecondary} text-xs`}>Streak</p>
+                  </motion.div>
                 </div>
               </motion.div>
             </div>

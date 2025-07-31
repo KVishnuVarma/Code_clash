@@ -141,7 +141,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`\uD83D\uDE80 Server running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`\uD83D\uDE80 Server running on port ${PORT}`));
 
 process.on("unhandledRejection", (err) => {
     console.error("\u274C Unhandled Promise Rejection:", err.message);

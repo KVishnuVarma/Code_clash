@@ -1,25 +1,233 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, Flame, Trophy, Target, Zap, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { getUserStreak, useStreakFreeze } from '../services/streakService';
-import toast from 'react-hot-toast';
-import Calendar from './Calendar';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
+import { Calendar as CalendarIcon, Flame, Trophy, Target, Zap, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Clock, Circle, CheckCircle2 } from 'lucide-react';
+
+// Mock hooks and services for demonstration
+const useAuth = () => ({ user: { name: 'Demo User' }, token: 'demo-token' });
+
+const getUserStreak = async () => ({
+  currentStreak: 15,
+  longestStreak: 42,
+  todaySolved: 3,
+  todayPoints: 150,
+  streakFreezes: 2,
+  dailyProgress: [
+    { date: new Date().toISOString(), problemsSolved: 3 },
+    { date: new Date(Date.now() - 86400000).toISOString(), problemsSolved: 2 },
+    { date: new Date(Date.now() - 172800000).toISOString(), problemsSolved: 1 },
+  ]
+});
+
+const useStreakFreeze = async () => ({ success: true });
+
+// Calendar Component
+const Calendar = ({ className = "" }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarData, setCalendarData] = useState([]);
+
+  useEffect(() => {
+    generateCalendarData();
+  }, [currentDate]);
+
+  const generateCalendarData = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const weeks = [];
+    let currentWeek = [];
+
+    for (let d = new Date(startDate); d <= lastDay || currentWeek.length < 7; d.setDate(d.getDate() + 1)) {
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
+      currentWeek.push({
+        day: d.getDate(),
+        date: new Date(d),
+        isCurrentMonth: d.getMonth() === month,
+        isToday: d.toDateString() === new Date().toDateString()
+      });
+    }
+    if (currentWeek.length > 0) weeks.push(currentWeek);
+    setCalendarData(weeks);
+  };
+
+  const goToPreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  return (
+    <div className={className}>
+      {/* Calendar Header */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={goToPreviousMonth}
+          className="p-1 hover:bg-gray-800 rounded transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-400" />
+        </button>
+        
+        <h3 className="text-sm font-medium text-white">
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+        </h3>
+        
+        <button
+          onClick={goToNextMonth}
+          className="p-1 hover:bg-gray-800 rounded transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+        </button>
+      </div>
+
+      {/* Day Headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {dayNames.map((day) => (
+          <div key={day} className="text-center">
+            <span className="text-xs text-gray-500 font-medium">{day}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {calendarData.map((week, weekIndex) =>
+          week.map((day, dayIndex) => (
+            <motion.div
+              key={`${weekIndex}-${dayIndex}`}
+              whileHover={{ scale: 1.05 }}
+              className={`relative p-2 text-center rounded text-xs transition-all duration-200 ${
+                day.isToday
+                  ? 'bg-white text-black font-semibold'
+                  : day.isCurrentMonth
+                  ? 'text-white hover:bg-gray-800'
+                  : 'text-gray-600'
+              }`}
+            >
+              {day.day}
+              {day.isToday && (
+                <div className="absolute -top-1 -right-1">
+                  <Circle className="w-2 h-2 text-black fill-current" />
+                </div>
+              )}
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Calendar Heatmap Component
+const CalendarHeatmap = ({ dailyProgress = [] }) => {
+  const generateHeatmapData = () => {
+    const heatmap = [];
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), 0, 1); // January 1st
+    
+    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+      const progress = dailyProgress.find(p => 
+        new Date(p.date).toDateString() === d.toDateString()
+      );
+      
+      heatmap.push({
+        date: new Date(d),
+        problemsSolved: progress ? progress.problemsSolved : 0
+      });
+    }
+    
+    return heatmap;
+  };
+
+  const getIntensity = (problemsSolved) => {
+    if (problemsSolved === 0) return 'bg-gray-900';
+    if (problemsSolved === 1) return 'bg-green-900';
+    if (problemsSolved === 2) return 'bg-green-700';
+    if (problemsSolved === 3) return 'bg-green-500';
+    return 'bg-green-300';
+  };
+
+  const heatmapData = generateHeatmapData();
+  const weeks = [];
+  let currentWeek = [];
+  
+  heatmapData.forEach((day) => {
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+    currentWeek.push(day);
+  });
+  if (currentWeek.length > 0) weeks.push(currentWeek);
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex space-x-1 min-w-max">
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="flex flex-col space-y-1">
+            {week.map((day, dayIndex) => (
+              <motion.div
+                key={`${weekIndex}-${dayIndex}`}
+                whileHover={{ scale: 1.2 }}
+                className={`w-3 h-3 rounded-sm ${getIntensity(day.problemsSolved)} transition-all duration-200`}
+                title={`${day.date.toLocaleDateString()}: ${day.problemsSolved} problems solved`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-3 flex justify-center space-x-3 text-xs">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-gray-900 rounded-sm"></div>
+          <span className="text-gray-400">0</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-green-900 rounded-sm"></div>
+          <span className="text-gray-400">1</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-green-700 rounded-sm"></div>
+          <span className="text-gray-400">2</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+          <span className="text-gray-400">3+</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const StreakDashboard = () => {
-  const [date, setDate] = useState(new Date());
+  const [date] = useState(new Date());
   const [streakData, setStreakData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [usingFreeze, setUsingFreeze] = useState(false);
-  const { user, token } = useAuth();
-  const { getThemeColors } = useTheme();
-  const themeColors = getThemeColors();
+  const { token } = useAuth();
 
   useEffect(() => {
     fetchStreakData();
-  }, []);
 
+  }, [fetchStreakData]);
+
+   
   const fetchStreakData = async () => {
     try {
       setLoading(true);
@@ -27,7 +235,6 @@ const StreakDashboard = () => {
       setStreakData(data);
     } catch (error) {
       console.error('Error fetching streak data:', error);
-      toast.error('Failed to load streak data');
     } finally {
       setLoading(false);
     }
@@ -36,11 +243,12 @@ const StreakDashboard = () => {
   const handleUseFreeze = async () => {
     try {
       setUsingFreeze(true);
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       await useStreakFreeze(token);
-      toast.success('Streak freeze used successfully!');
-      await fetchStreakData(); // Refresh data
+      await fetchStreakData();
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
-      toast.error(error.message || 'Failed to use streak freeze');
+      console.error('Failed to use streak freeze');
     } finally {
       setUsingFreeze(false);
     }
@@ -70,7 +278,6 @@ const StreakDashboard = () => {
     const today = new Date();
     const weekDays = [];
     
-    // Get the last 7 days
     for (let i = 6; i >= 0; i--) {
       const day = new Date(today);
       day.setDate(day.getDate() - i);
@@ -106,61 +313,100 @@ const StreakDashboard = () => {
     return dayDate.toLocaleDateString('en-US', { weekday: 'short' });
   };
 
+  const getMotivationalMessage = () => {
+    const streak = streakData?.currentStreak || 0;
+    
+    if (streak === 0) {
+      return {
+        title: "Start Your Journey",
+        message: "Every expert was once a beginner. Start solving problems today and build your coding streak!",
+        icon: Target
+      };
+    } else if (streak < 7) {
+      return {
+        title: "Building Momentum",
+        message: "Great start! Keep going for a week to establish a solid habit.",
+        icon: Zap
+      };
+    } else if (streak < 30) {
+      return {
+        title: "Consistency is Key",
+        message: "You're building a strong foundation. Keep up the excellent work!",
+        icon: Flame
+      };
+    } else if (streak < 100) {
+      return {
+        title: "Impressive Dedication",
+        message: "You're in the top tier of consistent coders. Your future self will thank you!",
+        icon: Trophy
+      };
+    } else {
+      return {
+        title: "Legendary Status",
+        message: "You're a coding legend! Your discipline and consistency are truly inspiring.",
+        icon: Trophy
+      };
+    }
+  };
+
   if (loading) {
     return (
-      <div className={`min-h-screen ${themeColors.bg} flex items-center justify-center`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
       </div>
     );
   }
 
+  const motivation = getMotivationalMessage();
+  const MotivationIcon = motivation.icon;
+
   return (
-    <div className={`min-h-screen ${themeColors.bg} p-6`}>
+    <div className="min-h-screen bg-black p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-6"
         >
-          <h1 className={`text-4xl font-bold ${themeColors.text} mb-2`}>
-            Your Coding Streak
+          <h1 className="text-2xl font-bold text-white mb-1">
+            Coding Streak
           </h1>
-          <p className={`text-lg ${themeColors.textSecondary}`}>
-            Keep the momentum going! Solve problems daily to maintain your streak.
+          <p className="text-sm text-gray-400">
+            Solve problems daily to maintain your streak
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Column - Streak Stats */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-6"
+            transition={{ delay: 0.1 }}
+            className="space-y-4"
           >
             {/* Current Streak Card */}
-            <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`text-2xl font-bold ${themeColors.text}`}>Current Streak</h2>
-                <Flame className="w-8 h-8 text-orange-500" />
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-white">Current Streak</h2>
+                <Flame className="w-5 h-5 text-white" />
               </div>
               
               <div className="text-center">
-                <div className="text-5xl font-bold text-orange-500 mb-2">
+                <div className="text-3xl font-bold text-white mb-1">
                   {streakData?.currentStreak || 0}
                 </div>
-                <p className={`text-lg ${themeColors.textSecondary}`}>days</p>
+                <p className="text-sm text-gray-400 mb-3">days</p>
                 
                 {streakData?.currentStreak > 0 && (
-                  <div className="mt-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div>
+                    <div className="w-full bg-gray-800 rounded-full h-1">
                       <div 
-                        className="bg-gradient-to-r from-orange-400 to-red-500 h-2 rounded-full transition-all duration-500"
+                        className="bg-white h-1 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min((streakData.currentStreak / 50) * 100, 100)}%` }}
                       ></div>
                     </div>
-                    <p className={`text-sm ${themeColors.textSecondary} mt-2`}>
+                    <p className="text-xs text-gray-500 mt-1">
                       {streakData.currentStreak} / 50 days
                     </p>
                   </div>
@@ -169,67 +415,67 @@ const StreakDashboard = () => {
             </div>
 
             {/* Longest Streak Card */}
-            <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`text-2xl font-bold ${themeColors.text}`}>Longest Streak</h2>
-                <Trophy className="w-8 h-8 text-yellow-500" />
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-white">Best Streak</h2>
+                <Trophy className="w-5 h-5 text-gray-400" />
               </div>
               
               <div className="text-center">
-                <div className="text-5xl font-bold text-yellow-500 mb-2">
+                <div className="text-3xl font-bold text-gray-400 mb-1">
                   {streakData?.longestStreak || 0}
                 </div>
-                <p className={`text-lg ${themeColors.textSecondary}`}>days</p>
+                <p className="text-sm text-gray-500">days</p>
               </div>
             </div>
 
             {/* Today's Progress */}
-            <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`text-2xl font-bold ${themeColors.text}`}>Today's Progress</h2>
-                <Target className="w-8 h-8 text-green-500" />
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-white">Today</h2>
+                <Target className="w-5 h-5 text-gray-400" />
               </div>
               
               <div className="text-center">
-                <div className="text-5xl font-bold text-green-500 mb-2">
+                <div className="text-3xl font-bold text-white mb-1">
                   {streakData?.todaySolved || 0}
                 </div>
-                <p className={`text-lg ${themeColors.textSecondary} mb-2`}>problems solved</p>
+                <p className="text-sm text-gray-400 mb-2">problems</p>
                 
-                <div className="text-3xl font-bold text-blue-500">
+                <div className="text-2xl font-bold text-gray-400">
                   {streakData?.todayPoints || 0}
                 </div>
-                <p className={`text-sm ${themeColors.textSecondary}`}>points earned</p>
+                <p className="text-xs text-gray-500">points</p>
               </div>
             </div>
 
             {/* Streak Freezes */}
-            <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`text-2xl font-bold ${themeColors.text}`}>Streak Freezes</h2>
-                <Zap className="w-8 h-8 text-blue-500" />
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-white">Freezes</h2>
+                <Zap className="w-5 h-5 text-gray-400" />
               </div>
               
               <div className="text-center">
-                <div className="text-5xl font-bold text-blue-500 mb-2">
+                <div className="text-3xl font-bold text-gray-400 mb-1">
                   {streakData?.streakFreezes || 0}
                 </div>
-                <p className={`text-lg ${themeColors.textSecondary} mb-4`}>available</p>
+                <p className="text-sm text-gray-500 mb-3">available</p>
                 
                 <button
                   onClick={handleUseFreeze}
                   disabled={usingFreeze || streakData?.streakFreezes <= 0}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  className={`px-4 py-2 rounded text-sm font-medium transition-all duration-200 ${
                     streakData?.streakFreezes > 0 && !usingFreeze
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? 'bg-white text-black hover:bg-gray-200'
+                      : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {usingFreeze ? 'Using Freeze...' : 'Use Streak Freeze'}
+                  {usingFreeze ? 'Using...' : 'Use Freeze'}
                 </button>
                 
-                <p className={`text-xs ${themeColors.textSecondary} mt-2`}>
-                  Use a freeze to maintain your streak when you miss a day
+                <p className="text-xs text-gray-500 mt-2">
+                  Maintain streak when missing a day
                 </p>
               </div>
             </div>
@@ -239,58 +485,51 @@ const StreakDashboard = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="space-y-6"
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
           >
-                         {/* Calendar Component */}
-             <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-               <div className="flex items-center justify-between mb-6">
-                 <h2 className={`text-2xl font-bold ${themeColors.text}`}>Activity Calendar</h2>
-                 <CalendarIcon className="w-8 h-8 text-purple-500" />
-               </div>
+            {/* Calendar Component */}
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white">Calendar</h2>
+                <CalendarIcon className="w-5 h-5 text-gray-400" />
+              </div>
+              
+              <Calendar className="mb-4" />
                
-               <div className="mb-4">
-                 <Calendar
-                   mode="single"
-                   selected={date}
-                   onSelect={setDate}
-                   className="rounded-lg border"
-                 />
-               </div>
-               
-               <div className="text-center">
-                 <p className={`text-lg ${themeColors.textSecondary} mb-4`}>
-                   Selected: {formatDate(date)}
+               <div className="text-center pt-3 border-t border-gray-800">
+                 <p className="text-sm text-gray-400 mb-2">
+                   {formatDate(date)}
                  </p>
                  
                  {getDayStatus(date) === 'solved' && (
-                   <div className="flex items-center justify-center space-x-2 text-green-500">
-                     <CheckCircle className="w-6 h-6" />
-                     <span className="font-semibold">Problems solved on this day!</span>
+                   <div className="flex items-center justify-center space-x-2 text-white">
+                     <CheckCircle className="w-4 h-4" />
+                     <span className="text-sm">Problems solved</span>
                    </div>
                  )}
                  
                  {getDayStatus(date) === 'freeze' && (
-                   <div className="flex items-center justify-center space-x-2 text-blue-500">
-                     <Zap className="w-6 h-6" />
-                     <span className="font-semibold">Streak freeze used on this day</span>
+                   <div className="flex items-center justify-center space-x-2 text-gray-400">
+                     <Zap className="w-4 h-4" />
+                     <span className="text-sm">Freeze used</span>
                    </div>
                  )}
                  
                  {getDayStatus(date) === 'empty' && (
                    <div className="flex items-center justify-center space-x-2 text-gray-500">
-                     <AlertCircle className="w-6 h-6" />
-                     <span className="font-semibold">No activity on this day</span>
+                     <AlertCircle className="w-4 h-4" />
+                     <span className="text-sm">No activity</span>
                    </div>
                  )}
                </div>
-             </div>
+            </div>
 
             {/* Weekly Activity */}
-            <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-              <h2 className={`text-2xl font-bold ${themeColors.text} mb-6`}>This Week's Activity</h2>
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-white mb-4">Weekly Activity</h2>
               
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1">
                 {getWeekDays().map((day, index) => {
                   const status = getDayStatus(day);
                   const isToday = day.toDateString() === new Date().toDateString();
@@ -299,38 +538,38 @@ const StreakDashboard = () => {
                     <motion.div
                       key={index}
                       whileHover={{ scale: 1.05 }}
-                      className={`relative p-3 rounded-lg text-center transition-all duration-200 ${
+                      className={`relative p-2 rounded text-center transition-all duration-200 ${
                         status === 'solved' 
-                          ? 'bg-green-500 text-white' 
+                          ? 'bg-white text-black' 
                           : status === 'freeze'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-gray-700 text-white'
                           : isToday
-                          ? 'bg-yellow-500 text-white'
-                          : `${themeColors.bg} ${themeColors.text} border ${themeColors.border}`
+                          ? 'bg-gray-800 text-white border border-gray-600'
+                          : 'bg-gray-900 border border-gray-800 text-gray-400'
                       }`}
                     >
-                      <div className="text-xs font-semibold mb-1">
+                      <div className="text-xs mb-1">
                         {getDayLabel(day)}
                       </div>
-                      <div className="text-lg font-bold">
+                      <div className="text-sm font-semibold">
                         {day.getDate()}
                       </div>
                       
                       {status === 'solved' && (
                         <div className="absolute -top-1 -right-1">
-                          <Flame className="w-4 h-4 text-orange-300" />
+                          <Flame className="w-3 h-3 text-black" />
                         </div>
                       )}
                       
                       {status === 'freeze' && (
                         <div className="absolute -top-1 -right-1">
-                          <Zap className="w-4 h-4 text-blue-300" />
+                          <Zap className="w-3 h-3 text-gray-300" />
                         </div>
                       )}
                       
                       {isToday && status === 'empty' && (
                         <div className="absolute -top-1 -right-1">
-                          <Target className="w-4 h-4 text-yellow-300" />
+                          <Target className="w-3 h-3 text-gray-400" />
                         </div>
                       )}
                     </motion.div>
@@ -338,43 +577,44 @@ const StreakDashboard = () => {
                 })}
               </div>
               
-              <div className="mt-4 flex justify-center space-x-4 text-sm">
+              <div className="mt-3 flex justify-center space-x-3 text-xs">
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span className={themeColors.textSecondary}>Solved</span>
+                  <div className="w-2 h-2 bg-white rounded"></div>
+                  <span className="text-gray-400">Solved</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                  <span className={themeColors.textSecondary}>Freeze Used</span>
+                  <div className="w-2 h-2 bg-gray-700 rounded"></div>
+                  <span className="text-gray-400">Freeze</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                  <span className={themeColors.textSecondary}>Today</span>
+                  <div className="w-2 h-2 bg-gray-800 border border-gray-600 rounded"></div>
+                  <span className="text-gray-400">Today</span>
                 </div>
               </div>
             </div>
 
+            {/* Heatmap */}
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-white mb-4">Year Overview</h2>
+              <CalendarHeatmap dailyProgress={streakData?.dailyProgress || []} />
+            </div>
+
             {/* Motivation Message */}
-            <div className={`${themeColors.cardBg} rounded-xl p-6 shadow-lg border ${themeColors.border}`}>
-              <div className="text-center">
-                <Flame className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <h3 className={`text-xl font-bold ${themeColors.text} mb-2`}>
-                  Don't let your hard work go to waste!
-                </h3>
-                <p className={`${themeColors.textSecondary} mb-4`}>
-                  Code today to keep your streak alive and earn more points.
-                </p>
-                
-                {streakData?.currentStreak > 0 && (
-                  <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-4 rounded-lg">
-                    <div className="text-2xl font-bold mb-1">
-                      {streakData.currentStreak} Day{streakData.currentStreak !== 1 ? 's' : ''} Strong!
-                    </div>
-                    <div className="text-sm opacity-90">
-                      Keep up the amazing work!
-                    </div>
-                  </div>
-                )}
+            <div className="bg-gray-950 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <MotivationIcon className="w-6 h-6 text-white" />
+                <h2 className="text-lg font-semibold text-white">{motivation.title}</h2>
+              </div>
+              
+              <p className="text-sm text-gray-400 leading-relaxed">
+                {motivation.message}
+              </p>
+              
+              <div className="mt-4 pt-3 border-t border-gray-800">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Next milestone: {streakData?.currentStreak < 7 ? '7 days' : streakData?.currentStreak < 30 ? '30 days' : '100 days'}</span>
+                  <Clock className="w-3 h-3" />
+                </div>
               </div>
             </div>
           </motion.div>
@@ -382,6 +622,6 @@ const StreakDashboard = () => {
       </div>
     </div>
   );
-};
+}
 
-export default StreakDashboard; 
+export default StreakDashboard;

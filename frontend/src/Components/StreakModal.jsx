@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Flame, Trophy, Target, Zap, Calendar as CalendarIcon, TrendingUp, Award, Clock, Code, Crown, Star } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
 import { getUserStreak, useStreakFreeze } from '../services/streakService';
 import useAuth from '../hooks/useAuth';
 import CalendarHeatmap from './CalendarHeatmap';
@@ -45,6 +47,7 @@ const StreakModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       fetchStreakData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, token]);
 
   // Get badge info

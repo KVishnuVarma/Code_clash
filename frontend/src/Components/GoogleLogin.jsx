@@ -144,7 +144,7 @@ const GoogleLogin = ({ onError }) => {
 
       {/* Status indicator */}
       <div className="text-xs text-gray-500 mt-2 text-center">
-        Google OAuth Status: {isGoogleLoaded ? "✅ Loaded" : "⏳ Loading..."}
+        {/* Google OAuth Status: {isGoogleLoaded ? "✅ Loaded" : "⏳ Loading..."} */}
       </div>
 
       {/* Fallback message if Google OAuth fails */}
