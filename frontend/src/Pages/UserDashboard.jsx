@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Zap, Clock, Code, Calendar as CalendarIcon, TrendingUp, Award, X, Star, Target, Rocket } from 'lucide-react';
+import { Flame, Trophy, Zap, Clock, Code, Calendar as CalendarIcon, TrendingUp, Award, X, Star, Target, Swords, Sword } from 'lucide-react';
 import UserNavbar from "../Components/UserNavbar";
 import { useTheme } from "../context/ThemeContext";
 import useAuth from "../hooks/useAuth";
@@ -19,6 +19,7 @@ function UserDashboard() {
   const [recentProblems, setRecentProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
 
   // Fetch user data
   const fetchUserData = async () => {
@@ -227,103 +228,205 @@ function UserDashboard() {
             {/* Left Side - Hero Section and Recent Problems */}
             <div className="lg:col-span-2 space-y-6">
               
-              {/* Hero Section - Redesigned with animations */}
+              {/* Epic Battle Animation Hero Section - Direct on Background */}
               <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 }}
-                className={`${themeColors.accentBg} rounded-xl p-8 text-center relative overflow-hidden`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative h-80 overflow-hidden"
               >
-                {/* Animated background elements */}
-                <motion.div
-                  animate={{ 
-                    rotate: 360,
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{ 
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                  className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full -translate-y-16 translate-x-16"
-                />
-                
-                <motion.div
-                  animate={{ 
-                    rotate: -360,
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{ 
-                    duration: 25,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                  className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-500/10 to-blue-500/10 rounded-full translate-y-12 -translate-x-12"
-                />
+                {/* Background with grid pattern */}
+                <div className={`absolute inset-0 ${themeColors.bg}`}>
+                  <div className="absolute top-0 left-1/4 w-96 h-96 bg-gray-700/5 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gray-600/5 rounded-full blur-3xl"></div>
+                </div>
 
-                <div className="relative z-10">
+                {/* Grid pattern overlay */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `radial-gradient(circle at 1px 1px, rgba(156,163,175,0.2) 1px, transparent 0)`,
+                    backgroundSize: '30px 30px'
+                  }}></div>
+                </div>
+
+                {/* Left Sword */}
+                <motion.div
+                  initial={{ x: -300, y: 50, rotate: 45 }}
+                  animate={{ 
+                    x: animationComplete ? -100 : 50, 
+                    y: animationComplete ? 50 : 100,
+                    rotate: animationComplete ? 45 : -15 
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    ease: "easeOut",
+                    delay: 0.5
+                  }}
+                  className="absolute top-1/2 left-0 transform -translate-y-1/2 z-20"
+                >
+                  <Sword className="w-16 h-16 text-gray-300 drop-shadow-2xl" />
+                  {/* Trail effect */}
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-                    className="mb-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ duration: 1.5, delay: 0.5 }}
+                    className="absolute -right-8 top-1/2 transform -translate-y-1/2 w-20 h-1 bg-gradient-to-r from-gray-400 to-transparent blur-sm"
+                  ></motion.div>
+                </motion.div>
+
+                {/* Right Sword */}
+                <motion.div
+                  initial={{ x: 300, y: 50, rotate: -135 }}
+                  animate={{ 
+                    x: animationComplete ? 100 : -50, 
+                    y: animationComplete ? 50 : 100,
+                    rotate: animationComplete ? -135 : 15 
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    ease: "easeOut",
+                    delay: 0.5
+                  }}
+                  onAnimationComplete={() => setAnimationComplete(true)}
+                  className="absolute top-1/2 right-0 transform -translate-y-1/2 z-20"
+                >
+                  <Sword className="w-16 h-16 text-gray-400 drop-shadow-2xl" />
+                  {/* Trail effect */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ duration: 1.5, delay: 0.5 }}
+                    className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-20 h-1 bg-gradient-to-l from-gray-500 to-transparent blur-sm"
+                  ></motion.div>
+                </motion.div>
+
+                {/* Center Clash Effect */}
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: animationComplete ? [0, 1.5, 1] : 0,
+                    opacity: animationComplete ? [0, 1, 0.8] : 0
+                  }}
+                  transition={{ 
+                    duration: 0.8, 
+                    delay: animationComplete ? 0.2 : 2,
+                    ease: "easeOut"
+                  }}
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30"
+                >
+                  {/* Flash/Spark effect */}
+                  <div className="relative">
+                    <Swords className={`w-12 h-12 ${themeColors.text} animate-pulse`} />
+                    <div className={`absolute inset-0 bg-gray-100/20 rounded-full blur-xl animate-pulse`}></div>
+                  </div>
+                </motion.div>
+
+                {/* Shockwave Ripple Effect */}
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: animationComplete ? [0, 3, 0] : 0,
+                    opacity: animationComplete ? [0, 0.6, 0] : 0
+                  }}
+                  transition={{ 
+                    duration: 1.2, 
+                    delay: animationComplete ? 0.3 : 2.3,
+                    ease: "easeOut"
+                  }}
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+                >
+                  <div className={`w-32 h-32 border-2 border-gray-500/30 rounded-full`}></div>
+                </motion.div>
+
+                {/* Second Shockwave */}
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: animationComplete ? [0, 4, 0] : 0,
+                    opacity: animationComplete ? [0, 0.4, 0] : 0
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    delay: animationComplete ? 0.5 : 2.5,
+                    ease: "easeOut"
+                  }}
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+                >
+                  <div className={`w-32 h-32 border border-gray-600/20 rounded-full`}></div>
+                </motion.div>
+
+                {/* Battle Text - Aligned Left */}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.8, duration: 0.8 }}
+                  className="absolute inset-0 flex flex-col justify-center pl-12 z-40"
+                >
+                  <motion.h2
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 2, duration: 0.6, type: "spring", stiffness: 200 }}
+                    className={`text-6xl font-black ${themeColors.text} mb-3 tracking-wider`}
+                    style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}
                   >
-                    <div className="relative inline-block">
-                      <Code className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                      <motion.div
-                        animate={{ 
-                          scale: [1, 1.2, 1],
-                          rotate: [0, 5, -5, 0]
-                        }}
-                        transition={{ 
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute -top-2 -right-2"
-                      >
-                        <Star className="w-6 h-6 text-yellow-400" />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.h2 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className={`text-3xl font-bold ${themeColors.text} mb-2 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 bg-clip-text text-transparent`}
-                  >
-                    Clash with Code, Rise with Skill
+                    CODE CLASH
                   </motion.h2>
                   
-                  <motion.p 
-                    initial={{ y: 20, opacity: 0 }}
+                  <motion.p
+                    initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className={`${themeColors.textSecondary} text-lg`}
+                    transition={{ delay: 2.3, duration: 0.6 }}
+                    className={`${themeColors.textSecondary} text-xl font-medium tracking-wide mb-6`}
+                    style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
                   >
-                    Your Journey to the Top Begins Here.
+                    Where Logic Meets Glory
                   </motion.p>
-                  
+
                   <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="mt-6"
+                    transition={{ delay: 2.6, duration: 0.6 }}
                   >
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(156, 163, 175, 0.3)' }}
                       whileTap={{ scale: 0.95 }}
-                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-gray to-gray-800 text-white px-6 py-3 rounded-full font-medium cursor-pointer"
+                      className={`px-8 py-3 ${themeColors.accentBg} hover:${themeColors.bg} ${themeColors.text} font-semibold rounded-full border ${themeColors.border} transition-all duration-300`}
+                      style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
                     >
-                      <Rocket className="w-5 h-5" />
-                      <span>Start Coding Now</span>
-                    </motion.div>
+                      <div className="flex items-center space-x-2">
+                        <Swords className="w-5 h-5" />
+                        <span>Enter Battle</span>
+                      </div>
+                    </motion.button>
                   </motion.div>
-                </div>
+                </motion.div>
+
+                {/* Floating particles */}
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ 
+                      opacity: [0, 1, 0], 
+                      y: [20, -50, -100],
+                      x: [0, Math.random() * 40 - 20, Math.random() * 80 - 40]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      delay: 2 + Math.random() * 2,
+                      repeat: Infinity,
+                      repeatDelay: Math.random() * 3
+                    }}
+                    className={`absolute w-1 h-1 ${themeColors.textSecondary} rounded-full`}
+                    style={{
+                      left: `${20 + Math.random() * 60}%`,
+                      top: `${60 + Math.random() * 20}%`
+                    }}
+                  />
+                ))}
               </motion.div>
 
-              {/* Recent Solved Problems */}
+              {/* Recent Solved Problems - Moved Below Hero */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -385,29 +488,20 @@ function UserDashboard() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className={`${themeColors.accentBg} rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-300`}
+                className={`${themeColors.accentBg} rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all duration-300`}
                 onClick={() => setShowStreakModal(true)}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <Flame className="w-5 h-5 text-orange-400" />
                     <h3 className={`${themeColors.text} font-medium text-sm`}>Current Streak</h3>
                   </div>
                   <p className={`${themeColors.textSecondary} text-xs`}>Click for details</p>
                 </div>
-                
-                <p className={`text-2xl font-bold ${themeColors.text} mb-3`}>{streakData?.currentStreak || 0} days</p>
-                
-                <div className="grid grid-cols-2 gap-3 text-center">
-                  <div className={`${themeColors.bg} rounded-lg p-2`}>
-                    <p className={`${themeColors.text} font-semibold text-sm`}>{streakData?.longestStreak || 0}</p>
-                    <p className={`${themeColors.textSecondary} text-xs`}>Longest</p>
-                  </div>
-                  <div className={`${themeColors.bg} rounded-lg p-2`}>
-                    <p className={`${themeColors.text} font-semibold text-sm`}>{streakData?.streakFreezes || 0}</p>
-                    <p className={`${themeColors.textSecondary} text-xs`}>Freezes</p>
-                  </div>
-                </div>
+
+                <p className={`text-2xl font-bold ${themeColors.text} text-center mb-2`}>
+                  {streakData?.currentStreak || 0} days
+                </p>
               </motion.div>
 
               {/* Compact Calendar */}
@@ -415,13 +509,13 @@ function UserDashboard() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className={`${themeColors.accentBg} rounded-xl p-4`}
+                className="w-full"
               >
-                <div className="flex items-center mb-3">
+                <div className="flex items-center justify-center mb-3">
                   <CalendarIcon className="w-5 h-5 text-blue-400 mr-2" />
                   <h3 className={`${themeColors.text} font-medium text-sm`}>Activity Calendar</h3>
                 </div>
-                <div className="scale-90 origin-top-left">
+                <div className="w-full">
                   <Calendar className="w-full" />
                 </div>
               </motion.div>

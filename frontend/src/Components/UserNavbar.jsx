@@ -18,10 +18,10 @@ import {
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/userDashboard/user-dashboard" },
-  { id: "profile", label: "Profile", icon: User, path: "/userDashboard/user-profile" },
-  { id: "leaderboard", label: "Leaderboard", icon: Award, path: "/userDashboard/user-leaderboard" },
+  { id: "problems", label: "Problems", icon: List, path: "/userDashboard/user-problems" },
   { id: "contests", label: "Contests", icon: Layers, path: "/userDashboard/user-contests" },
-  { id: "problems", label: "Problems", icon: List, path: "/userDashboard/user-problems" }
+  { id: "leaderboard", label: "Leaderboard", icon: Award, path: "/userDashboard/user-leaderboard" },
+  { id: "profile", label: "Profile", icon: User, path: "/userDashboard/user-profile" }
 ];
 
 const LoadingSpinner = ({ theme }) => (

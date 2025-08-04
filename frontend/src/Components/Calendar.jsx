@@ -12,7 +12,7 @@ const Calendar = ({ className = "" }) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const { token } = useAuth();
 
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -76,12 +76,12 @@ const Calendar = ({ className = "" }) => {
 
   if (loading) {
     return (
-      <div className={`bg-gray-950 border border-gray-800 rounded-lg p-4 ${className}`}>
+      <div className={`bg-zinc-900 border border-zinc-800 rounded-lg p-4 ${className}`}>
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-800 rounded mb-4"></div>
-          <div className="grid grid-cols-7 gap-2">
+          <div className="h-4 bg-zinc-800 rounded mb-4"></div>
+          <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 42 }).map((_, i) => (
-              <div key={i} className="h-8 bg-gray-800 rounded"></div>
+              <div key={i} className="h-10 bg-zinc-800 rounded"></div>
             ))}
           </div>
         </div>
@@ -90,48 +90,46 @@ const Calendar = ({ className = "" }) => {
   }
 
   return (
-    <div className={`bg-gray-950 border border-gray-800 rounded-lg p-4 ${className}`}>
+    <div className={`bg-zinc-900 border border-zinc-800 rounded-lg p-4 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <h3 className="text-sm font-medium text-white">
-            {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h3>
-          <div className="flex items-center space-x-1 px-2 py-1 bg-gray-900 rounded border border-gray-800">
-            <Clock className="w-3 h-3 text-gray-500" />
-            <span className="text-gray-400 text-xs">
-              {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
-            </span>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-1">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
           <button
             onClick={goToPreviousMonth}
-            className="p-1 rounded hover:bg-gray-900 transition-colors border border-gray-800"
+            className="p-1.5 rounded-md hover:bg-zinc-800 transition-colors"
           >
-            <ChevronLeft className="w-3 h-3 text-gray-400" />
+            <ChevronLeft className="w-4 h-4 text-zinc-400" />
           </button>
+          <h3 className="text-lg font-medium text-white min-w-[140px] text-center">
+            {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </h3>
           <button
             onClick={goToNextMonth}
-            className="p-1 rounded hover:bg-gray-900 transition-colors border border-gray-800"
+            className="p-1.5 rounded-md hover:bg-zinc-800 transition-colors"
           >
-            <ChevronRight className="w-3 h-3 text-gray-400" />
+            <ChevronRight className="w-4 h-4 text-zinc-400" />
           </button>
+        </div>
+        
+        <div className="flex items-center space-x-2 px-3 py-1.5 bg-zinc-800 rounded-md">
+          <Clock className="w-4 h-4 text-zinc-500" />
+          <span className="text-zinc-300 text-sm font-mono">
+            {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+          </span>
         </div>
       </div>
 
       {/* Days of week header */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {daysOfWeek.map((day, index) => (
-          <div key={index} className="text-center text-gray-500 text-xs py-1">
+          <div key={index} className="text-center text-zinc-500 text-sm py-2 font-medium">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar days */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
+      <div className="grid grid-cols-7 gap-1 mb-6">
         {calendarData.map((week, weekIndex) =>
           week.map((day, dayIndex) => (
             <div key={`${weekIndex}-${dayIndex}`} className="relative">
@@ -145,30 +143,28 @@ const Calendar = ({ className = "" }) => {
                     stiffness: 300
                   }}
                   className={`
-                    aspect-square rounded flex items-center justify-center relative cursor-pointer text-xs
+                    h-10 rounded-md flex items-center justify-center relative cursor-pointer text-sm font-medium
                     transition-all duration-200 group hover:scale-105
                     ${day.solved 
-                      ? 'bg-white text-black font-medium' 
-                      : 'bg-gray-900 border border-gray-800 text-gray-400 hover:border-gray-700'
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
+                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300'
                     }
                     ${day.date && new Date(day.date).getDate() === new Date().getDate() &&
                       new Date(day.date).getMonth() === new Date().getMonth() &&
                       new Date(day.date).getFullYear() === new Date().getFullYear()
-                      ? 'ring-1 ring-gray-600' 
+                      ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-zinc-900' 
                       : ''
                     }
                   `}
                 >
                   <span>{day.day}</span>
                   
-                  {day.solved ? (
-                    <CheckCircle2 className="absolute -top-1 -right-1 w-3 h-3 text-black bg-white rounded-full" />
-                  ) : (
-                    <Circle className="absolute -top-1 -right-1 w-3 h-3 text-gray-600 bg-gray-950 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {day.solved && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-zinc-900" />
                   )}
                 </motion.div>
               ) : (
-                <div className="aspect-square"></div>
+                <div className="h-10"></div>
               )}
             </div>
           ))
@@ -176,12 +172,18 @@ const Calendar = ({ className = "" }) => {
       </div>
 
       {/* Bottom stats */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-800">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          <span className="text-gray-400 text-xs">Active</span>
+      <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span className="text-zinc-400 text-sm">Solved</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-zinc-700 rounded-full"></div>
+            <span className="text-zinc-400 text-sm">Pending</span>
+          </div>
         </div>
-        <button className="text-gray-500 hover:text-gray-400 text-xs transition-colors">
+        <button className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors font-medium">
           Rules
         </button>
       </div>
