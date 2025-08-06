@@ -37,11 +37,13 @@ import CalendarHeatmap from '../Components/CalendarHeatmap';
 import { useTheme } from '../context/ThemeContext';
 import useAuth from '../hooks/useAuth';
 import { profileService } from '../services/authService';
+import { getUserSubmissions } from '../services/problemService';
+import { getDiscussion } from '../services/aiHelpService';
 
 function Profile() {
   const { getThemeColors } = useTheme();
   const themeColors = getThemeColors();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   
   const [profileData, setProfileData] = useState(null);
   const [statistics, setStatistics] = useState(null);
@@ -77,6 +79,13 @@ function Profile() {
   const [profilePicture, setProfilePicture] = useState('');
   const [newSkill, setNewSkill] = useState('');
 
+  // State for activity tabs
+  const [listSubmissions, setListSubmissions] = useState([]);
+  const [solutions, setSolutions] = useState([]);
+  const [discussions, setDiscussions] = useState([]);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabError, setTabError] = useState('');
+
   useEffect(() => {
     if (token) {
       fetchProfileData();
@@ -87,6 +96,30 @@ function Profile() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    if (!user || !user.id) return;
+    if (activeTab === 'list') {
+      setTabLoading(true); setTabError('');
+      getUserSubmissions(user.id)
+        .then(setListSubmissions)
+        .catch(e => setTabError(e.message))
+        .finally(() => setTabLoading(false));
+    } else if (activeTab === 'solutions') {
+      setTabLoading(true); setTabError('');
+      // For demo, fetch all submissions as solutions (customize as needed)
+      getUserSubmissions(user.id)
+        .then(data => setSolutions(data.filter(sub => sub.code && sub.language)))
+        .catch(e => setTabError(e.message))
+        .finally(() => setTabLoading(false));
+    } else if (activeTab === 'discuss') {
+      setTabLoading(true); setTabError('');
+      getDiscussion({ userId: user.id })
+        .then(data => setDiscussions(data.discussions || []))
+        .catch(e => setTabError(e.message))
+        .finally(() => setTabLoading(false));
+    }
+  }, [activeTab, user]);
 
   const fetchProfileData = async () => {
     try {
@@ -594,9 +627,86 @@ function Profile() {
                   </div>
                 )}
                 
-                {activeTab !== 'recent' && (
-                  <div className="text-center py-12">
-                    <p className={`${themeColors.textSecondary}`}>No content available for this tab</p>
+                {activeTab === 'list' && (
+                  <div>
+                    {tabLoading ? (
+                      <div className="text-center py-12"><span className="animate-spin">⏳</span> Loading submissions...</div>
+                    ) : tabError ? (
+                      <div className="text-center py-12 text-red-500">{tabError}</div>
+                    ) : listSubmissions.length === 0 ? (
+                      <div className="text-center py-12">No submissions found.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {listSubmissions.map((sub, idx) => (
+                          <div key={sub._id || idx} className={`${themeColors.accentBg} flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg`}>
+                            <div>
+                              <p className={`font-medium ${themeColors.text} text-sm`}>{sub.problemTitle || sub.problemId?.title || 'Unknown Problem'}</p>
+                              <p className={`text-xs ${themeColors.textSecondary}`}>Submitted: {sub.createdAt ? new Date(sub.createdAt).toLocaleString() : 'N/A'}</p>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 md:mt-0">
+                              <span className={`text-xs font-medium px-2 py-1 rounded ${getDifficultyColor(sub.problemId?.difficulty)} bg-opacity-10`}>
+                                {sub.problemId?.difficulty || 'Easy'}
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-gray-200 rounded">{sub.language || 'N/A'}</span>
+                              <span className={`text-xs px-2 py-1 rounded ${sub.status === 'Accepted' ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}`}>{sub.status || 'Pending'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {activeTab === 'solutions' && (
+                  <div>
+                    {tabLoading ? (
+                      <div className="text-center py-12"><span className="animate-spin">⏳</span> Loading solutions...</div>
+                    ) : tabError ? (
+                      <div className="text-center py-12 text-red-500">{tabError}</div>
+                    ) : solutions.length === 0 ? (
+                      <div className="text-center py-12">No solutions found.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {solutions.map((sol, idx) => (
+                          <div key={sol._id || idx} className={`${themeColors.accentBg} flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg`}>
+                            <div>
+                              <p className={`font-medium ${themeColors.text} text-sm`}>{sol.problemTitle || sol.problemId?.title || 'Unknown Problem'}</p>
+                              <p className={`text-xs ${themeColors.textSecondary}`}>Language: {sol.language || 'N/A'}</p>
+                              <pre className="bg-gray-100 rounded p-2 mt-2 text-xs overflow-x-auto max-w-xl">{sol.code || 'No code available.'}</pre>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 md:mt-0">
+                              <span className={`text-xs font-medium px-2 py-1 rounded ${getDifficultyColor(sol.problemId?.difficulty)} bg-opacity-10`}>
+                                {sol.problemId?.difficulty || 'Easy'}
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded ${sol.status === 'Accepted' ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}`}>{sol.status || 'Pending'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {activeTab === 'discuss' && (
+                  <div>
+                    {tabLoading ? (
+                      <div className="text-center py-12"><span className="animate-spin">⏳</span> Loading discussions...</div>
+                    ) : tabError ? (
+                      <div className="text-center py-12 text-red-500">{tabError}</div>
+                    ) : discussions.length === 0 ? (
+                      <div className="text-center py-12">No discussions found.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {discussions.map((d, idx) => (
+                          <div key={d._id || idx} className={`${themeColors.accentBg} flex flex-col py-3 px-4 rounded-lg`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg">💬</span>
+                              <span className={`font-medium ${themeColors.text}`}>{d.title || 'Discussion'}</span>
+                            </div>
+                            <div className={`text-xs ${themeColors.textSecondary}`}>{d.content || d.message || 'No content.'}</div>
+                            <div className="text-xs text-right mt-2">{d.createdAt ? new Date(d.createdAt).toLocaleString() : ''}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
