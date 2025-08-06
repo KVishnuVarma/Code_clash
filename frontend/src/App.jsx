@@ -8,6 +8,7 @@ import Home from "./Pages/Home";
 import Contests from "./admin/Contests";
 import Leaderboard from "./admin/Leaderboard";
 import Profile from "./Pages/Profile";
+import PublicProfile from "./Pages/PublicProfile";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Contact from "./Pages/Contact";
@@ -58,6 +59,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/profile/:id" element={<Profile />} />
+        <Route path="/profile/user/:username" element={<PublicProfile />} />
+        <Route path="/profile/name/:name" element={<PublicProfile />} />
 
         {/* Protected User Routes */}
         <Route 

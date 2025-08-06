@@ -86,6 +86,10 @@ function Profile() {
   const [tabLoading, setTabLoading] = useState(false);
   const [tabError, setTabError] = useState('');
 
+  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameSuccess, setUsernameSuccess] = useState('');
+
   useEffect(() => {
     if (token) {
       fetchProfileData();
@@ -250,6 +254,24 @@ function Profile() {
     }));
   };
 
+  const handleSetUsername = async () => {
+    setUsernameError('');
+    setUsernameSuccess('');
+    if (!usernameInput.trim()) {
+      setUsernameError('Username is required');
+      return;
+    }
+    try {
+      await profileService.setUsername(token, usernameInput.trim());
+      setUsernameSuccess('Username set successfully!');
+      setProfileData(prev => ({ ...prev, username: usernameInput.trim() }));
+      setUsernameInput('');
+      // Optionally, update user in AuthContext/sessionStorage here
+    } catch (err) {
+      setUsernameError(err.message);
+    }
+  };
+
   const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
       case 'easy': return 'text-green-500';
@@ -356,6 +378,11 @@ function Profile() {
                 <h2 className={`text-xl font-semibold ${themeColors.text} mt-4`}>
                   {profileData?.name || 'User'}
                 </h2>
+                {profileData?.username && (
+                  <div className={`text-sm ${themeColors.textSecondary} mt-1`}>
+                    @{profileData.username}
+                  </div>
+                )}
                 <p className={`text-sm ${themeColors.textSecondary} mt-1`}>
                   {profileData?.email || ''}
                 </p>
@@ -482,6 +509,27 @@ function Profile() {
                 </div>
               </div>
             )}
+
+            {/* Username set UI in sidebar */}
+            {!profileData?.username && (
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="Set your username"
+                  value={usernameInput}
+                  onChange={e => setUsernameInput(e.target.value)}
+                  className="w-full p-2 border rounded mb-2"
+                />
+                <button
+                  onClick={handleSetUsername}
+                  className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
+                >
+                  Set Username
+                </button>
+                {usernameError && <div className="text-red-500 text-xs mt-1">{usernameError}</div>}
+                {usernameSuccess && <div className="text-green-600 text-xs mt-1">{usernameSuccess}</div>}
+              </div>
+            )}
           </div>
 
           {/* Main Content */}
@@ -496,10 +544,10 @@ function Profile() {
                     <div className={`w-32 h-32 rounded-full border-8 ${themeColors.border} relative`}>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <div className={`text-3xl font-bold ${themeColors.text}`}>
-                          {statistics?.totalProblems || 12}
+                          {statistics?.totalProblems || 0}
                         </div>
                         <div className={`text-sm ${themeColors.textSecondary}`}>
-                          /{(statistics?.totalEasy || 0) + (statistics?.totalMedium || 0) + (statistics?.totalHard || 0) || 3641}
+                          /{(statistics?.totalEasy ?? 0) + (statistics?.totalMedium ?? 0) + (statistics?.totalHard ?? 0)}
                         </div>
                         <div className={`text-xs ${themeColors.textSecondary}`}>Solved</div>
                       </div>
@@ -520,7 +568,7 @@ function Profile() {
                         <span className={`text-sm ${themeColors.textSecondary}`}>Easy</span>
                       </div>
                       <div className={`text-sm font-medium ${themeColors.text}`}>
-                        {statistics?.easyProblems || 9}/{statistics?.totalEasy || 888}
+                        {statistics?.easyProblems ?? 0}/{statistics?.totalEasy ?? 0}
                       </div>
                     </div>
                     
@@ -530,7 +578,7 @@ function Profile() {
                         <span className={`text-sm ${themeColors.textSecondary}`}>Med</span>
                       </div>
                       <div className={`text-sm font-medium ${themeColors.text}`}>
-                        {statistics?.mediumProblems || 2}/{statistics?.totalMedium || 1894}
+                        {statistics?.mediumProblems ?? 0}/{statistics?.totalMedium ?? 0}
                       </div>
                     </div>
                     
@@ -540,7 +588,7 @@ function Profile() {
                         <span className={`text-sm ${themeColors.textSecondary}`}>Hard</span>
                       </div>
                       <div className={`text-sm font-medium ${themeColors.text}`}>
-                        {statistics?.hardProblems || 1}/{statistics?.totalHard || 859}
+                        {statistics?.hardProblems ?? 0}/{statistics?.totalHard ?? 0}
                       </div>
                     </div>
                   </div>

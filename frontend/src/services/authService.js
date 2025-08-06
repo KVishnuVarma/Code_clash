@@ -213,5 +213,27 @@ export const profileService = {
             console.error('Error changing password:', error);
             throw error;
         }
+    },
+
+    // Set username for current user
+    async setUsername(token, username) {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/set-username`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token
+                },
+                body: JSON.stringify({ username })
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to set username');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error setting username:', error);
+            throw error;
+        }
     }
 };

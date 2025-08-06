@@ -92,6 +92,7 @@ router.post('/google', async (req, res) => {
 
 router.post('/register', [
     check('name', 'Name is required').not().isEmpty(),
+    check('username', 'Username is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Password must be at least 6 characters').isLength({ min: 6 })
 ], async (req, res) => {
@@ -100,11 +101,16 @@ router.post('/register', [
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, email, password, role } = req.body;
+    const { name, username, email, password, role } = req.body;
     try {
         let user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({ message: 'User already exists' });
+        }
+        // Check for unique username
+        let existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ message: 'Username is already taken' });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -112,6 +118,7 @@ router.post('/register', [
 
         user = new User({
             name,
+            username,
             email,
             password: hashedPassword,
             role: role || 'user',
@@ -127,6 +134,7 @@ router.post('/register', [
             user: { 
                 _id: user._id, 
                 name, 
+                username,
                 email, 
                 role: user.role,
                 theme: user.theme,
@@ -388,20 +396,18 @@ function isConsecutiveDay(date1Str, date2Str) {
     return diffDays === 1;
 }
 
-// Get public user profile by username
-router.get('/profile/:username', async (req, res) => {
+// Get public user profile by name (more specific route)
+router.get('/profile/name/:name', async (req, res) => {
     try {
-        const { username } = req.params;
-        
-        const user = await User.findOne({ username })
+        const { name } = req.params;
+        // Find user by name (case-insensitive, trimmed)
+        const user = await User.findOne({ name: { $regex: `^${name.trim()}$`, $options: 'i' } })
             .select('-password -email -phone -activityLog')
             .populate('solvedProblems.problemId', 'title difficulty category')
             .populate('problemScores.problemId', 'title difficulty category');
-        
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-
         res.json(user);
     } catch (err) {
         console.error('Error fetching public user profile:', err);
@@ -693,6 +699,35 @@ router.put('/change-password', authenticateUser, [
         res.json({ message: 'Password changed successfully' });
     } catch (err) {
         console.error('Error changing password:', err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// Set username for authenticated user if not already set
+router.put('/set-username', authenticateUser, async (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+        return res.status(400).json({ message: 'Username is required' });
+    }
+    try {
+        // Check if username is already taken
+        const existing = await User.findOne({ username });
+        if (existing) {
+            return res.status(400).json({ message: 'Username is already taken' });
+        }
+        // Find user and set username if not already set
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.username) {
+            return res.status(400).json({ message: 'Username already set' });
+        }
+        user.username = username;
+        await user.save();
+        res.json({ message: 'Username set successfully', username });
+    } catch (err) {
+        console.error('Error setting username:', err);
         res.status(500).json({ message: 'Server Error' });
     }
 });

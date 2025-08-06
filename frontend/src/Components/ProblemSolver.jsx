@@ -433,13 +433,6 @@ const ProblemSolve = () => {
   const debugTimerSession = () => {
     if (sessionKey) {
       const sessionData = localStorage.getItem(sessionKey);
-      console.log('Timer Session Debug:', {
-        sessionKey,
-        sessionData: sessionData ? JSON.parse(sessionData) : null,
-        elapsedTime,
-        isSessionActive,
-        startTime: new Date(startTime).toISOString()
-      });
     }
   };
 

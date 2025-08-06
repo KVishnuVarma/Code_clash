@@ -4,7 +4,7 @@ import { useTheme } from "../context/ThemeContext";
 import GoogleLogin from "../Components/GoogleLogin";
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", username: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -73,6 +73,17 @@ const Register = () => {
             name="name"
             placeholder="Full Name"
             value={formData.name}
+            onChange={handleChange}
+            required
+            className={`w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-0 focus:outline-none transition-all duration-300 ${
+              themeColors.text === 'text-white' ? 'bg-black text-white border-gray-600 focus:border-white' : 'bg-white text-black border-gray-300 focus:border-black'
+            }`}
+          />
+          <input
+            type="text"
+            name="username"
+            placeholder="Username (unique)"
+            value={formData.username}
             onChange={handleChange}
             required
             className={`w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-0 focus:outline-none transition-all duration-300 ${
