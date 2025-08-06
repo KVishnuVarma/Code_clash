@@ -9,7 +9,19 @@ const UserSchema = new mongoose.Schema({
     country: String,
     password: String,
     googleId: String, // Google OAuth ID
-    profilePicture: String, // Google profile picture URL
+    profilePicture: String, // Google profile picture URL or uploaded image
+    
+    // Enhanced profile fields (LeetCode-style)
+    username: { type: String, unique: true, sparse: true }, // Unique username like "Vishnu_Varma_4201"
+    bio: { type: String, default: "Passionate developer with a strong foundation in programming." },
+    location: { type: String, default: "India" },
+    education: { type: String, default: "University" },
+    portfolio: { type: String, default: "" },
+    github: { type: String, default: "" },
+    linkedin: { type: String, default: "" },
+    skills: [{ type: String }], // Array of programming languages/skills
+    rank: { type: Number, default: 0 }, // Global rank
+    
     points: { type: Number, default: 0 },
     solvedProblems: [{
         problemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Problem' },
@@ -26,6 +38,7 @@ const UserSchema = new mongoose.Schema({
         timeTaken: { type: Number, default: 0 }, // in seconds
         attempts: { type: Number, default: 0 }
     }],
+    
     // Enhanced Streak tracking fields
     streak: {
         currentStreak: { type: Number, default: 0 },
@@ -45,6 +58,18 @@ const UserSchema = new mongoose.Schema({
             pointsEarned: { type: Number, default: 0 },
             topicsSolved: [{ type: String }], // Track topics solved each day
             solved: { type: Boolean, default: false } // Track if any problem was solved
+        }]
+    },
+    
+    // Submission statistics
+    submissionStats: {
+        totalSubmissions: { type: Number, default: 0 },
+        acceptedSubmissions: { type: Number, default: 0 },
+        activeDays: { type: Number, default: 0 },
+        maxStreak: { type: Number, default: 0 },
+        submissionHistory: [{
+            date: { type: Date, required: true },
+            submissions: { type: Number, default: 0 }
         }]
     }
 });
