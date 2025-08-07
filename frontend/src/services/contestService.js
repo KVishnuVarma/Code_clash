@@ -1,11 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
 export const getUserRegisteredContests = async (userId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/contest/user/registered?userId=${userId}`, {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contest/user/registered?userId=${userId}`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-auth-token': token
       }
     });
 
@@ -24,10 +28,16 @@ export const getUserRegisteredContests = async (userId) => {
 
 export const getAllContests = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/contest`, {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contest`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-auth-token': token
       }
     });
 
@@ -44,25 +54,27 @@ export const getAllContests = async () => {
   }
 };
 
-export const registerForContest = async (contestId, userId) => {
+export const registerForContest = async (contestId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/contest/${contestId}/register`, {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contest/${contestId}/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ userId })
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      }
     });
-
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to register for contest');
+      throw new Error(errorData.error || errorData.details || 'Failed to register for contest');
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error registering for contest:', error);
     throw error;
   }
 }; 

@@ -20,7 +20,8 @@ function App() {
     status: "Upcoming",
     allowedLanguages: "",
     maxAttempts: "",
-    problems: [{ question: "", options: ["", "", "", ""], correctOption: 0 }],
+    problems: [],
+    mcqProblems: [{ question: "", options: ["", "", "", ""], correctOption: 0 }],
   });
 
   const fetchContests = async () => {
@@ -78,8 +79,8 @@ function App() {
   const addQuestion = () => {
     setForm((prevForm) => ({
       ...prevForm,
-      problems: [
-        ...prevForm.problems,
+      mcqProblems: [
+        ...prevForm.mcqProblems,
         { question: "", options: ["", "", "", ""], correctOption: 0 },
       ],
     }));
@@ -94,37 +95,53 @@ function App() {
 
   const handleQuestionChange = (qIndex, field, value) => {
     setForm((prevForm) => {
-      const updatedProblems = [...prevForm.problems];
+      const updatedProblems = [...prevForm.mcqProblems];
       updatedProblems[qIndex] = {
         ...updatedProblems[qIndex],
         [field]: value,
       };
-      return { ...prevForm, problems: updatedProblems };
+      return { ...prevForm, mcqProblems: updatedProblems };
     });
   };
 
   const handleOptionChange = (qIndex, optIndex, value) => {
-    const updatedProblems = [...form.problems];
+    const updatedProblems = [...form.mcqProblems];
     updatedProblems[qIndex].options[optIndex] = value;
-    setForm((prevForm) => ({ ...prevForm, problems: updatedProblems }));
+    setForm((prevForm) => ({ ...prevForm, mcqProblems: updatedProblems }));
   };
 
   const handleCorrectOptionChange = (qIndex, optIndex) => {
-    const updatedProblems = [...form.problems];
+    const updatedProblems = [...form.mcqProblems];
     updatedProblems[qIndex].correctOption = optIndex;
-    setForm((prevForm) => ({ ...prevForm, problems: updatedProblems }));
+    setForm((prevForm) => ({ ...prevForm, mcqProblems: updatedProblems }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Filter out empty MCQ problems and ensure they have all required fields
+      const filteredMcqProblems = form.mcqProblems
+        .filter(problem => problem.question && problem.question.trim() !== '')
+        .map(problem => ({
+          question: problem.question,
+          options: problem.options || [],
+          correctOption: problem.correctOption !== undefined ? problem.correctOption : 0,
+          points: problem.points || 10
+        }));
+      
+      // Format the form data
+      const formData = {
+        ...form,
+        mcqProblems: filteredMcqProblems
+      };
+      
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(formData),
       });
 
-      await response.json();
+      const result = await response.json();
       alert("Contest created successfully!");
       fetchContests();
       setForm({
@@ -138,6 +155,7 @@ function App() {
         allowedLanguages: "",
         maxAttempts: "",
         problems: [],
+        mcqProblems: [],
       });
     } catch (error) {
       console.error("Error creating contest:", error.message);
@@ -277,7 +295,7 @@ function App() {
           Add Question
         </button>
 
-        {form.problems.map((q, qIndex) => (
+        {form.mcqProblems.map((q, qIndex) => (
           <div key={qIndex} className="mb-3 bg-gray-700 p-3 rounded-lg">
             <div className="flex justify-between items-center">
               <input

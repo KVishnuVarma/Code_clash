@@ -28,6 +28,9 @@ import ProblemView from "./Components/ProblemView";
 import ProblemSolver from "./Components/ProblemSolver";
 import ResultsPage from "./Components/ResultsPage";
 import StreakTest from "./Pages/StreakTest";
+import ContestDetail from "./Pages/ContestDetail";
+import ContestProblem from "./Pages/ContestProblem";
+import ContestMCQ from "./Pages/ContestMCQ";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -109,6 +112,33 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProblemView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/contest/:contestId" 
+          element={
+            <ProtectedRoute>
+              <ContestDetail />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Contest Problem Route */}
+        <Route 
+          path="/contest/:contestId/problem/:problemId" 
+          element={
+            <ProtectedRoute>
+              <ContestProblem />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/contest/:contestId/mcq" 
+          element={
+            <ProtectedRoute>
+              <ContestMCQ />
             </ProtectedRoute>
           } 
         />
