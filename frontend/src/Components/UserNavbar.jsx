@@ -19,7 +19,6 @@ import {
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/userDashboard/user-dashboard" },
   { id: "problems", label: "Problems", icon: List, path: "/userDashboard/user-problems" },
-  { id: "contests", label: "Contests", icon: Layers, path: "/userDashboard/user-contests" },
   { id: "leaderboard", label: "Leaderboard", icon: Award, path: "/userDashboard/user-leaderboard" },
   { id: "profile", label: "Profile", icon: User, path: "/userDashboard/user-profile" }
 ];

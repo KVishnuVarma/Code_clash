@@ -55,7 +55,6 @@ const Sidebar = ({ onExpandChange }) => {
     { path: "/userDashboard/user-dashboard", label: "Dashboard", icon: Home },
     { path: "/userDashboard/user-profile", label: "Profile", icon: User },
     { path: "/userDashboard/user-leaderboard", label: "Leaderboard", icon: Award },
-    { path: "/userDashboard/user-contests", label: "Contests", icon: Layers },
     { path: "/userDashboard/user-problems", label: "Problems", icon: List }
   ];
 

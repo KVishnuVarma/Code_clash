@@ -5,7 +5,6 @@ import Footer from "./Components/Footer";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminRoute from "./Components/AdminRoute";
 import Home from "./Pages/Home";
-import Contests from "./admin/Contests";
 import Leaderboard from "./admin/Leaderboard";
 import Profile from "./Pages/Profile";
 import PublicProfile from "./Pages/PublicProfile";
@@ -16,7 +15,6 @@ import AdminDashboard from "./admin/AdminDashboard";
 import Problems from "./admin/Problems";
 import Users from "./admin/Users";
 import ViolationMonitor from "./admin/ViolationMonitor";
-import Contest from "./Pages/Contests";
 import Leader from "./Pages/LeaderBoard";
 import Problem from "./Pages/Problems";
 import UserDashboard from "./Pages/UserDashboard";
@@ -28,9 +26,7 @@ import ProblemView from "./Components/ProblemView";
 import ProblemSolver from "./Components/ProblemSolver";
 import ResultsPage from "./Components/ResultsPage";
 import StreakTest from "./Pages/StreakTest";
-import ContestDetail from "./Pages/ContestDetail";
 import ContestProblem from "./Pages/ContestProblem";
-import ContestMCQ from "./Pages/ContestMCQ";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -84,14 +80,6 @@ export default function App() {
           } 
         />
         <Route 
-          path="/userDashboard/user-contests" 
-          element={
-            <ProtectedRoute>
-              <Contest />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
           path="/userDashboard/user-leaderboard" 
           element={
             <ProtectedRoute>
@@ -115,15 +103,6 @@ export default function App() {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/contest/:contestId" 
-          element={
-            <ProtectedRoute>
-              <ContestDetail />
-            </ProtectedRoute>
-          } 
-        />
-
         {/* Contest Problem Route */}
         <Route 
           path="/contest/:contestId/problem/:problemId" 
@@ -133,16 +112,6 @@ export default function App() {
             </ProtectedRoute>
           } 
         />
-        
-        <Route 
-          path="/contest/:contestId/mcq" 
-          element={
-            <ProtectedRoute>
-              <ContestMCQ />
-            </ProtectedRoute>
-          } 
-        />
-
         {/* Protected Routes */}
         <Route 
           path="/user-profile" 
@@ -189,14 +158,6 @@ export default function App() {
           element={
             <AdminRoute>
               <Users />
-            </AdminRoute>
-          } 
-        />
-        <Route 
-          path="/admin-dashboard/contests" 
-          element={
-            <AdminRoute>
-              <Contests />
             </AdminRoute>
           } 
         />

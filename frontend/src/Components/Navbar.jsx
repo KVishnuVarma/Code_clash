@@ -42,15 +42,6 @@ const Navbar = () => {
           </Link>
 
           <Link
-            to="/admin-dashboard/contests"
-            className="relative px-4 py-2 rounded-full transition-all duration-300 
-    hover:bg-gradient-to-r from-[#00D8FF] to-[#0078FF] hover:text-gray-900 
-    hover:shadow-lg hover:scale-110"
-          >
-            Contests
-          </Link>
-
-          <Link
             to="/admin-dashboard/problems"
             className="relative px-4 py-2 rounded-full transition-all duration-300 
     hover:bg-gradient-to-r from-[#00D8FF] to-[#0078FF] hover:text-gray-900 
@@ -102,13 +93,6 @@ const Navbar = () => {
             onClick={() => setIsOpen(false)}
           >
             Violation Monitor
-          </Link>
-          <Link
-            to="/admin-dashboard/contests"
-            className="hover:text-[#00D8FF] transition-all"
-            onClick={() => setIsOpen(false)}
-          >
-            Contests
           </Link>
           <Link
             to="/admin-dashboard/problems"
