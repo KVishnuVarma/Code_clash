@@ -272,7 +272,7 @@ router.get('/admin', authenticateUser, adminMiddleware, async (req, res) => {
 router.get("/api/leaderboard", async (req, res) => {
     try {
         const leaderboard = await User.find({ role: "user" })
-            .select('username name points rank solvedProblems.length')
+            .select('username name points rank solvedProblems.length profilePicture department')
             .sort({ points: -1 }); // ✅ Exclude admins
         
         // Transform to use username as display name, fallback to name if no username
@@ -621,12 +621,34 @@ router.put('/profile-picture', authenticateUser, async (req, res) => {
             return res.status(400).json({ message: 'Profile picture URL is required' });
         }
 
+        // Validate and normalize the URL
+        let normalizedUrl = profilePicture.trim();
+        
+        // Check if it's a valid URL
+        try {
+            const url = new URL(normalizedUrl);
+            
+            // Ensure it's an HTTPS URL for security
+            if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+                return res.status(400).json({ message: 'Invalid URL protocol. Use http:// or https://' });
+            }
+            
+            // For production, prefer HTTPS
+            if (process.env.NODE_ENV === 'production' && url.protocol === 'http:') {
+                normalizedUrl = normalizedUrl.replace('http://', 'https://');
+            }
+            
+        } catch (urlError) {
+            // If it's not a valid URL, it might be a relative path or invalid URL
+            return res.status(400).json({ message: 'Please provide a valid image URL (e.g., https://example.com/image.jpg)' });
+        }
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        user.profilePicture = profilePicture;
+        user.profilePicture = normalizedUrl;
         await user.save();
 
         // Log the activity

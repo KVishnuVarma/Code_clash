@@ -464,10 +464,16 @@ function Profile() {
                         src={profileData.profilePicture} 
                         alt="Profile" 
                         className="w-24 h-24 rounded-full object-cover"
+                        onError={(e) => {
+                          // Hide broken image and show fallback
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      profileData?.name?.charAt(0)?.toUpperCase() || 'U'
-                    )}
+                    ) : null}
+                    <div className={`w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold ${profileData?.profilePicture ? 'hidden' : ''}`}>
+                      {profileData?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
                   </div>
                   {profileData?.role === 'admin' && (
                     <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1">
@@ -476,9 +482,15 @@ function Profile() {
                   )}
                   <button
                     onClick={() => {
-                      const url = prompt('Enter profile picture URL:');
-                      if (url) {
-                        setProfilePicture(url);
+                      const url = prompt(
+                        'Enter profile picture URL:\n\n' +
+                        '• Must be a valid image URL (e.g., https://example.com/image.jpg)\n' +
+                        '• Supported formats: JPG, PNG, GIF\n' +
+                        '• For best results, use HTTPS URLs\n\n' +
+                        'Current URL: ' + (profilePicture || 'None')
+                      );
+                      if (url && url.trim()) {
+                        setProfilePicture(url.trim());
                         handleProfilePictureUpdate();
                       }
                     }}

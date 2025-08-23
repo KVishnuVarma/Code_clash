@@ -199,12 +199,16 @@ function LeaderBoard() {
                                 src={user.profilePicture} 
                                 alt={user.displayName} 
                                 className="w-10 h-10 rounded-full object-cover"
+                                onError={(e) => {
+                                  // Hide broken image and show fallback
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
                               />
-                            ) : (
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${themeColors.accentBg} ${themeColors.accentText}`}>
-                                <UserIcon className="w-5 h-5" />
-                              </div>
-                            )}
+                            ) : null}
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${themeColors.accentBg} ${themeColors.accentText} ${user.profilePicture ? 'hidden' : ''}`}>
+                              <UserIcon className="w-5 h-5" />
+                            </div>
                             <div>
                               <div className={`font-medium ${themeColors.text}`}>{user.displayName}</div>
                               {user.username && user.username !== user.displayName && (
