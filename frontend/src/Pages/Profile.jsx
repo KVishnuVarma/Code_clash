@@ -59,6 +59,7 @@ function Profile() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    username: '',
     bio: '',
     location: '',
     education: '',
@@ -86,7 +87,6 @@ function Profile() {
   const [tabLoading, setTabLoading] = useState(false);
   const [tabError, setTabError] = useState('');
 
-  const [usernameInput, setUsernameInput] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [usernameSuccess, setUsernameSuccess] = useState('');
 
@@ -100,6 +100,15 @@ function Profile() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Clear success messages when component mounts or when editing state changes
+  useEffect(() => {
+    if (!editing) {
+      setUsernameSuccess('');
+      setUsernameError('');
+      setUsernameAvailable(null);
+    }
+  }, [editing]);
 
   useEffect(() => {
     if (!user || !user.id) return;
@@ -131,17 +140,18 @@ function Profile() {
       setError('');
       const data = await profileService.getUserProfile(token);
       setProfileData(data);
-      setFormData({
-        name: data.name || '',
-        email: data.email || '',
-        bio: data.bio || '',
-        location: data.location || '',
-        education: data.education || '',
-        portfolio: data.portfolio || '',
-        github: data.github || '',
-        linkedin: data.linkedin || '',
-        skills: data.skills || []
-      });
+             setFormData({
+         name: data.name || '',
+         email: data.email || '',
+         username: data.username || '',
+         bio: data.bio || '',
+         location: data.location || '',
+         education: data.education || '',
+         portfolio: data.portfolio || '',
+         github: data.github || '',
+         linkedin: data.linkedin || '',
+         skills: data.skills || []
+       });
       setProfilePicture(data.profilePicture || '');
     } catch (error) {
       setError(`Failed to load profile data: ${error.message}`);
@@ -181,9 +191,22 @@ function Profile() {
     try {
       setError('');
       setSuccess('');
+      setUsernameError('');
+      setUsernameSuccess('');
       
       console.log('Updating profile with data:', formData);
       console.log('Token exists:', !!token);
+      
+      // Handle username update separately if it has changed
+      if (formData.username && formData.username !== profileData?.username) {
+        try {
+          await profileService.setUsername(token, formData.username.trim());
+          setUsernameSuccess('Username updated successfully!');
+        } catch (err) {
+          setUsernameError(err.message);
+          return; // Don't proceed with other updates if username fails
+        }
+      }
       
       const response = await profileService.updateEnhancedProfile(token, formData);
       console.log('Profile update response:', response);
@@ -254,23 +277,113 @@ function Profile() {
     }));
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleSetUsername = async () => {
     setUsernameError('');
     setUsernameSuccess('');
-    if (!usernameInput.trim()) {
+    
+    const newUsername = formData.username.trim();
+    
+    if (!newUsername) {
       setUsernameError('Username is required');
       return;
     }
+    
+    // Check if username is the same as current
+    if (newUsername === profileData?.username) {
+      setUsernameError('This is already your current username');
+      return;
+    }
+    
+    // Basic validation
+    if (newUsername.length < 3) {
+      setUsernameError('Username must be at least 3 characters long');
+      return;
+    }
+    
+    if (newUsername.length > 20) {
+      setUsernameError('Username must be less than 20 characters');
+      return;
+    }
+    
+    // Check for valid characters (alphanumeric and underscore only)
+    if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+      setUsernameError('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+    
     try {
-      await profileService.setUsername(token, usernameInput.trim());
-      setUsernameSuccess('Username set successfully!');
-      setProfileData(prev => ({ ...prev, username: usernameInput.trim() }));
-      setUsernameInput('');
-      // Optionally, update user in AuthContext/sessionStorage here
+      const response = await profileService.setUsername(token, newUsername);
+      setUsernameSuccess(response.message || 'Username updated successfully!');
+      setProfileData(prev => ({ ...prev, username: newUsername }));
+      
+      // Clear success message immediately after a brief moment to show the feedback
+      setTimeout(() => {
+        setUsernameSuccess('');
+        setUsernameError('');
+        setUsernameAvailable(null);
+      }, 1500);
     } catch (err) {
       setUsernameError(err.message);
     }
   };
+
+  // Real-time username validation
+  const validateUsername = (username) => {
+    if (!username || username.length < 3) {
+      return 'Username must be at least 3 characters long';
+    }
+    if (username.length > 20) {
+      return 'Username must be less than 20 characters';
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return 'Username can only contain letters, numbers, and underscores';
+    }
+    if (username === profileData?.username) {
+      return 'This is already your current username';
+    }
+    return null; // No error
+  };
+
+  // Check username availability with debouncing
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+
+  const checkUsernameAvailability = async (username) => {
+    if (!username || username === profileData?.username) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    const validationError = validateUsername(username);
+    if (validationError) {
+      setUsernameAvailable(false);
+      return;
+    }
+
+    setUsernameChecking(true);
+    try {
+      const result = await profileService.checkUsernameAvailability(username);
+      setUsernameAvailable(result.available);
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      setUsernameAvailable(false);
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
+
+  // Debounced username check
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.username) {
+        checkUsernameAvailability(formData.username);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.username]);
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
@@ -392,8 +505,8 @@ function Profile() {
                   </p>
                 )}
                 
-                <p className={`text-sm ${themeColors.textSecondary} mt-3 text-center`}>
-                  {profileData?.bio || "Passionate developer with a strong foundation in programming."}
+                <p className={`text-sm ${themeColors.text} mt-3 text-center`}>
+                  {profileData?.bio }
                 </p>
                 
                 <button
@@ -510,26 +623,7 @@ function Profile() {
               </div>
             )}
 
-            {/* Username set UI in sidebar */}
-            {!profileData?.username && (
-              <div className="mt-4">
-                <input
-                  type="text"
-                  placeholder="Set your username"
-                  value={usernameInput}
-                  onChange={e => setUsernameInput(e.target.value)}
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <button
-                  onClick={handleSetUsername}
-                  className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
-                >
-                  Set Username
-                </button>
-                {usernameError && <div className="text-red-500 text-xs mt-1">{usernameError}</div>}
-                {usernameSuccess && <div className="text-green-600 text-xs mt-1">{usernameSuccess}</div>}
-              </div>
-            )}
+            
           </div>
 
           {/* Main Content */}
@@ -600,11 +694,11 @@ function Profile() {
             <div className={`${themeColors.bg} rounded-lg shadow-sm border ${themeColors.border} p-6`}>
               <div className="flex items-center justify-between mb-6">
                 <h3 className={`text-lg font-semibold ${themeColors.text}`}>
-                  {profileData?.submissionStats?.totalSubmissions || 19} submissions in the past one year
+                  {profileData?.submissionStats?.totalSubmissions || 0} submissions in the past one year
                 </h3>
                 <div className={`flex items-center gap-4 text-sm ${themeColors.textSecondary}`}>
-                  <span>Total active days: {profileData?.submissionStats?.activeDays || 6}</span>
-                  <span>Max streak: {profileData?.submissionStats?.maxStreak || 3}</span>
+                  <span>Total active days: {profileData?.submissionStats?.activeDays || 0}</span>
+                  <span>Max streak: {profileData?.submissionStats?.maxStreak || 0}</span>
                 </div>
               </div>
               
@@ -774,35 +868,82 @@ function Profile() {
             <h3 className={`text-xl font-semibold ${themeColors.text} mb-6`}>Edit Profile</h3>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
+                     Full Name
+                   </label>
+                   <input
+                     type="text"
+                     name="name"
+                     value={formData.name}
+                     onChange={handleInputChange}
+                     className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
+                     placeholder="Enter your full name"
+                   />
+                 </div>
+                 
+                 <div>
+                   <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
+                     Email
+                   </label>
+                   <input
+                     type="email"
+                     name="email"
+                     value={formData.email}
+                     onChange={handleInputChange}
+                     className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
+                     placeholder="Enter your email"
+                   />
+                 </div>
+               </div>
+
+               <div>
+                 <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
+                   Username
+                 </label>
+                 <div className="relative">
+                   <input
+                     type="text"
+                     name="username"
+                     value={formData.username}
+                     onChange={handleInputChange}
+                     className={`w-full p-3 pr-10 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
+                     placeholder="Enter your username"
+                   />
+                   {usernameChecking && (
+                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                       <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                     </div>
+                   )}
+                   {!usernameChecking && usernameAvailable === true && (
+                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                       <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                         </svg>
+                       </div>
+                     </div>
+                   )}
+                   {!usernameChecking && usernameAvailable === false && (
+                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                       <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                           <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                         </svg>
+                       </div>
+                     </div>
+                   )}
+                 </div>
+                 {usernameError && <div className="text-red-500 text-xs mt-1">{usernameError}</div>}
+                 {usernameSuccess && <div className="text-green-600 text-xs mt-1">{usernameSuccess}</div>}
+                 {!usernameChecking && usernameAvailable === true && (
+                   <div className="text-green-600 text-xs mt-1">✓ Username is available</div>
+                 )}
+                 {!usernameChecking && usernameAvailable === false && formData.username && formData.username !== profileData?.username && (
+                   <div className="text-red-500 text-xs mt-1">✗ Username is already taken</div>
+                 )}
+               </div>
 
               <div>
                 <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
@@ -813,7 +954,7 @@ function Profile() {
                   value={formData.bio}
                   onChange={handleInputChange}
                   rows={3}
-                  className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                  className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                   placeholder="Tell us about yourself..."
                 />
               </div>
@@ -828,7 +969,7 @@ function Profile() {
                     name="location"
                     value={formData.location}
                     onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                    className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                     placeholder="Your location"
                   />
                 </div>
@@ -842,7 +983,7 @@ function Profile() {
                     name="education"
                     value={formData.education}
                     onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                    className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                     placeholder="Your education"
                   />
                 </div>
@@ -858,38 +999,38 @@ function Profile() {
                     name="portfolio"
                     value={formData.portfolio}
                     onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                    className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                     placeholder="https://portfolio.com"
                   />
                 </div>
                 
-                <div>
-                  <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
-                    GitHub Username
-                  </label>
-                  <input
-                    type="text"
-                    name="github"
-                    value={formData.github}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
-                    placeholder="username"
-                  />
-                </div>
+                                 <div>
+                   <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
+                     GitHub Username
+                   </label>
+                   <input
+                     type="text"
+                     name="github"
+                     value={formData.github}
+                     onChange={handleInputChange}
+                     className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
+                     placeholder="Enter your GitHub username"
+                   />
+                 </div>
                 
-                <div>
-                  <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
-                    LinkedIn Username
-                  </label>
-                  <input
-                    type="text"
-                    name="linkedin"
-                    value={formData.linkedin}
-                    onChange={handleInputChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
-                    placeholder="username"
-                  />
-                </div>
+                                 <div>
+                   <label className={`block text-sm font-medium ${themeColors.text} mb-2`}>
+                     LinkedIn Username
+                   </label>
+                   <input
+                     type="text"
+                     name="linkedin"
+                     value={formData.linkedin}
+                     onChange={handleInputChange}
+                     className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
+                     placeholder="Enter your LinkedIn username"
+                   />
+                 </div>
               </div>
 
               <div>
@@ -918,7 +1059,7 @@ function Profile() {
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                    className={`flex-1 p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                    className={`flex-1 p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                     placeholder="Add a skill"
                   />
                   <button
@@ -940,20 +1081,25 @@ function Profile() {
                 Save Changes
               </button>
               <button
-                onClick={() => {
-                  setEditing(false);
-                  setFormData({
-                    name: profileData?.name || '',
-                    email: profileData?.email || '',
-                    bio: profileData?.bio || '',
-                    location: profileData?.location || '',
-                    education: profileData?.education || '',
-                    portfolio: profileData?.portfolio || '',
-                    github: profileData?.github || '',
-                    linkedin: profileData?.linkedin || '',
-                    skills: profileData?.skills || []
-                  });
-                }}
+                                 onClick={() => {
+                   setEditing(false);
+                   setFormData({
+                     name: profileData?.name || '',
+                     email: profileData?.email || '',
+                     username: profileData?.username || '',
+                     bio: profileData?.bio || '',
+                     location: profileData?.location || '',
+                     education: profileData?.education || '',
+                     portfolio: profileData?.portfolio || '',
+                     github: profileData?.github || '',
+                     linkedin: profileData?.linkedin || '',
+                     skills: profileData?.skills || []
+                   });
+                   // Clear all success and error messages when canceling
+                   setUsernameSuccess('');
+                   setUsernameError('');
+                   setUsernameAvailable(null);
+                 }}
                 className={`flex-1 ${themeColors.accentBg} hover:${themeColors.accentHover} ${themeColors.text} font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center border ${themeColors.border}`}
               >
                 <X size={16} className="mr-2" />
@@ -984,7 +1130,7 @@ function Profile() {
                   name="currentPassword"
                   value={passwordData.currentPassword}
                   onChange={handlePasswordChange}
-                  className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                  className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                   placeholder="Enter current password"
                 />
               </div>
@@ -999,7 +1145,7 @@ function Profile() {
                     name="newPassword"
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
-                    className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10`}
+                    className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10 placeholder:${themeColors.textSecondary}`}
                     placeholder="Enter new password"
                   />
                   <button
@@ -1021,7 +1167,7 @@ function Profile() {
                   name="confirmPassword"
                   value={passwordData.confirmPassword}
                   onChange={handlePasswordChange}
-                  className={`w-full p-3 border ${themeColors.border} rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                  className={`w-full p-3 border ${themeColors.border} ${themeColors.text} bg-transparent rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder:${themeColors.textSecondary}`}
                   placeholder="Confirm new password"
                 />
               </div>

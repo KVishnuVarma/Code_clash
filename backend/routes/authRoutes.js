@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Problem = require('../models/Problem');
 const Submission = require('../models/Submission');
 const { authenticateUser } = require('../middleware/authMiddleware');
+const { generateUsernameFromFullName, ensureUserHasUsername } = require('../utils/usernameGenerator');
 
 const router = express.Router();
 
@@ -48,12 +49,19 @@ router.post('/google', async (req, res) => {
                 user.googleId = googleId;
                 await user.save();
             }
+            
+            // Ensure user has a username (for existing users)
+            user = await ensureUserHasUsername(user);
         } else {
+            // Generate unique username for new user
+            const username = await generateUsernameFromFullName(name);
+            
             // Create new user
             user = new User({
                 name,
                 email,
                 googleId,
+                username,
                 role: 'user',
                 activityLog: [],
                 isSuspended: false,
@@ -75,6 +83,7 @@ router.post('/google', async (req, res) => {
                 _id: user._id, 
                 name: user.name, 
                 email: user.email, 
+                username: user.username,
                 role: user.role,
                 isSuspended: user.isSuspended,
                 theme: user.theme,
@@ -107,10 +116,17 @@ router.post('/register', [
         if (user) {
             return res.status(400).json({ message: 'User already exists' });
         }
-        // Check for unique username
-        let existingUsername = await User.findOne({ username });
-        if (existingUsername) {
-            return res.status(400).json({ message: 'Username is already taken' });
+        
+        // Generate username if not provided
+        let finalUsername = username;
+        if (!finalUsername) {
+            finalUsername = await generateUsernameFromFullName(name);
+        } else {
+            // Check for unique username if provided
+            let existingUsername = await User.findOne({ username: finalUsername });
+            if (existingUsername) {
+                return res.status(400).json({ message: 'Username is already taken' });
+            }
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -118,7 +134,7 @@ router.post('/register', [
 
         user = new User({
             name,
-            username,
+            username: finalUsername,
             email,
             password: hashedPassword,
             role: role || 'user',
@@ -134,7 +150,7 @@ router.post('/register', [
             user: { 
                 _id: user._id, 
                 name, 
-                username,
+                username: finalUsername,
                 email, 
                 role: user.role,
                 theme: user.theme,
@@ -173,6 +189,9 @@ router.post('/login', [
             return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
+        // Ensure user has a username (for existing users)
+        user = await ensureUserHasUsername(user);
+
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         user.activityLog.push(`User logged in at ${new Date().toISOString()}`);
@@ -184,6 +203,7 @@ router.post('/login', [
                 _id: user._id, 
                 name: user.name, 
                 email: user.email, 
+                username: user.username,
                 role: user.role,
                 isSuspended: user.isSuspended,
                 theme: user.theme,
@@ -251,8 +271,17 @@ router.get('/admin', authenticateUser, adminMiddleware, async (req, res) => {
 
 router.get("/api/leaderboard", async (req, res) => {
     try {
-        const leaderboard = await User.find({ role: "user" }).sort({ points: -1 }); // ✅ Exclude admins
-        res.json(leaderboard);
+        const leaderboard = await User.find({ role: "user" })
+            .select('username name points rank solvedProblems.length')
+            .sort({ points: -1 }); // ✅ Exclude admins
+        
+        // Transform to use username as display name, fallback to name if no username
+        const transformedLeaderboard = leaderboard.map(user => ({
+            ...user.toObject(),
+            displayName: user.username || user.name
+        }));
+        
+        res.json(transformedLeaderboard);
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
@@ -380,6 +409,13 @@ router.get('/profile', authenticateUser, async (req, res) => {
             submissionHistory: submissionHistoryArray
         };
 
+        // Ensure user has username
+        if (!userWithStats.username) {
+            const user = await User.findById(req.user.id);
+            const updatedUser = await ensureUserHasUsername(user);
+            userWithStats.username = updatedUser.username;
+        }
+        
         res.json(userWithStats);
     } catch (err) {
         console.error('Error fetching user profile:', err);
@@ -703,31 +739,93 @@ router.put('/change-password', authenticateUser, [
     }
 });
 
-// Set username for authenticated user if not already set
+// Set username for authenticated user (allows changing existing username)
 router.put('/set-username', authenticateUser, async (req, res) => {
     const { username } = req.body;
     if (!username) {
         return res.status(400).json({ message: 'Username is required' });
     }
     try {
-        // Check if username is already taken
-        const existing = await User.findOne({ username });
-        if (existing) {
-            return res.status(400).json({ message: 'Username is already taken' });
-        }
-        // Find user and set username if not already set
+        // Find current user
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        if (user.username) {
-            return res.status(400).json({ message: 'Username already set' });
+
+        // If user is trying to set the same username they already have, return success
+        if (user.username === username) {
+            return res.json({ message: 'Username unchanged', username });
         }
+
+        // Check if username is already taken by another user
+        const existing = await User.findOne({ username, _id: { $ne: req.user.id } });
+        if (existing) {
+            return res.status(400).json({ message: 'Username is already taken by another user' });
+        }
+
+        // Update username
         user.username = username;
         await user.save();
-        res.json({ message: 'Username set successfully', username });
+
+        // Log the activity
+        user.activityLog.push(`Username changed to "${username}" at ${new Date().toISOString()}`);
+        await user.save();
+
+        res.json({ message: 'Username updated successfully', username });
     } catch (err) {
         console.error('Error setting username:', err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// Check username availability
+router.get('/check-username/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        if (!username) {
+            return res.status(400).json({ message: 'Username is required' });
+        }
+        
+        // Basic validation
+        if (username.length < 3) {
+            return res.status(400).json({ 
+                available: false, 
+                message: 'Username must be at least 3 characters long' 
+            });
+        }
+        
+        if (username.length > 20) {
+            return res.status(400).json({ 
+                available: false, 
+                message: 'Username must be less than 20 characters' 
+            });
+        }
+        
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            return res.status(400).json({ 
+                available: false, 
+                message: 'Username can only contain letters, numbers, and underscores' 
+            });
+        }
+        
+        // Check if username exists
+        const existingUser = await User.findOne({ username });
+        
+        if (existingUser) {
+            return res.json({ 
+                available: false, 
+                message: 'Username is already taken' 
+            });
+        }
+        
+        return res.json({ 
+            available: true, 
+            message: 'Username is available' 
+        });
+        
+    } catch (err) {
+        console.error('Error checking username availability:', err);
         res.status(500).json({ message: 'Server Error' });
     }
 });

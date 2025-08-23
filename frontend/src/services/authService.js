@@ -235,5 +235,22 @@ export const profileService = {
             console.error('Error setting username:', error);
             throw error;
         }
+    },
+
+    // Check username availability
+    async checkUsernameAvailability(username) {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/check-username/${encodeURIComponent(username)}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to check username availability');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error checking username availability:', error);
+            throw error;
+        }
     }
 };
