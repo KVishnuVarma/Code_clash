@@ -246,23 +246,50 @@ const Problems = () => {
         className="p-4 sm:p-8 transition-all duration-300 pt-24 max-w-7xl mx-auto"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-8 text-center sm:text-left px-2">
-          <motion.h1
-            initial={{ opacity: 0, x: -30 }}
+        <motion.div 
+          variants={itemVariants} 
+          className="mb-12 mt-16 px-4 sm:px-6 max-w-4xl"
+        >
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className={`text-3xl sm:text-4xl font-bold ${themeColors.text} mb-2`}
+            transition={{ 
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            className="flex flex-col items-start"
           >
-            Coding Problems
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className={`${themeColors.textSecondary} text-base sm:text-lg`}
-          >
-            Enhance your coding skills with our curated problems
-          </motion.p>
+            <motion.h1
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className={`text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300 dark:from-orange-300 dark:via-amber-200 dark:to-yellow-200 bg-clip-text text-transparent animate-pulse tracking-tight`}
+            >
+              Coding Problems
+            </motion.h1>
+            <motion.div 
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ 
+                duration: 0.5,
+                delay: 0.3,
+                ease: "easeOut"
+              }}
+              className={`w-24 h-1 bg-gradient-to-r from-orange-200 via-amber-200 to-yellow-200 dark:from-orange-100 dark:via-amber-50 dark:to-yellow-100 rounded-full origin-left`}
+            />
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.4,
+                delay: 0.5,
+                ease: "easeOut"
+              }}
+              className={`mt-4 text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed`}
+            >
+              Enhance your coding skills with our curated problems
+            </motion.p>
+          </motion.div>
         </motion.div>
 
         {/* Search and Filter */}

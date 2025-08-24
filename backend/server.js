@@ -42,7 +42,6 @@ app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) {
-            console.log("✅ Allowing request with no origin");
             return callback(null, true);
         }
         
@@ -125,12 +124,15 @@ app.use("/api/problems", require("./routes/problemRoutes"));
 app.use("/api/submissions", require("./routes/submissionRoutes"));
 app.use("/api/aihelp", require("./routes/aiHelpRoutes"));
 app.use("/api/streak", require("./routes/streakRoutes"));
+app.use("/api/posts", require("./routes/postRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
 
 app.get("/", (req, res) => {
     res.status(200).json({ message: "\u2705 API is running..." });
 });
 
 app.use((req, res) => {
+    console.log("404 Not Found:", req.originalUrl);
     res.status(404).json({ error: "\u274C Route not found" });
 });
 
@@ -140,7 +142,19 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => console.log(`\uD83D\uDE80 Server running on port ${PORT}`));
+const server = require('http').createServer(app);
+const { initializeSocket } = require('./services/socketService');
+
+// Initialize Socket.IO
+const io = initializeSocket(server);
+
+// Middleware to attach io to req object
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
+server.listen(PORT, "0.0.0.0", () => console.log(`\uD83D\uDE80 Server running on port ${PORT}`));
 
 process.on("unhandledRejection", (err) => {
     console.error("\u274C Unhandled Promise Rejection:", err.message);
