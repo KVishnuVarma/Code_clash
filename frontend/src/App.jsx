@@ -1,9 +1,11 @@
 import React from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "./Components/Navbar";
+import UserNavbar from "./Components/UserNavbar";
 import Footer from "./Components/Footer";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminRoute from "./Components/AdminRoute";
+import PostHome from "./Components/posts/PostHome";
 import Home from "./Pages/Home";
 import Leaderboard from "./admin/Leaderboard";
 import Profile from "./Pages/Profile";
@@ -27,6 +29,8 @@ import ProblemSolver from "./Components/ProblemSolver";
 import ResultsPage from "./Components/ResultsPage";
 import StreakTest from "./Pages/StreakTest";
 import ContestProblem from "./Pages/ContestProblem";
+import ChatPage from "./Pages/ChatPage";
+import PostPage from "./Pages/PostPage";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -48,13 +52,25 @@ export default function App() {
     }
   }
 
+  // Define paths where navbar should not be shown
+  const noNavbarPaths = ['/login', '/register', '/'];
+
+  // Check if current path should show navbar
+  const shouldShowNavbar = !isProblemSolver && 
+                         !noNavbarPaths.includes(location.pathname) && 
+                         user;
+
   return (
     <ThemeProvider>
-      {(!isProblemSolver && user?.role === "admin") && <Navbar />}
+      {shouldShowNavbar && (
+        <>
+          {user?.isAdmin ? <Navbar /> : <UserNavbar />}
+        </>
+      )}
       
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={user ? <PostHome /> : <Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
@@ -132,6 +148,24 @@ export default function App() {
           element={
             <ProtectedRoute>
               <StreakTest />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Chat & Posts Routes */}
+        <Route 
+          path="/chat" 
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/posts" 
+          element={
+            <ProtectedRoute>
+              <PostPage />
             </ProtectedRoute>
           } 
         />

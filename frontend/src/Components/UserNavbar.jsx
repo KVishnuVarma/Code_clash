@@ -101,9 +101,14 @@ const UserNavbar = () => {
         <div className="flex justify-between h-16 items-center">
           {/* Logo with gradient */}
           <div className="flex-shrink-0 flex items-center">
-            <span className={`text-2xl font-bold bg-gradient-to-r ${themeColors.gradient} bg-clip-text text-transparent animate-pulse`}>
-              CodeClash
-            </span>
+            <button
+              onClick={() => navigate('/')}
+              className="focus:outline-none"
+            >
+              <span className={`text-2xl font-bold bg-gradient-to-r ${themeColors.gradient} bg-clip-text text-transparent animate-pulse hover:scale-105 transition-transform cursor-pointer`}>
+                CodeClash
+              </span>
+            </button>
           </div>
 
           {/* Desktop Menu */}

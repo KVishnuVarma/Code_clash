@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatService } from '../services/chatService';
-import { Send, Edit2, Trash2, Pin, Forward, Smile } from 'react-feather';
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
+import { Send, Edit2, Trash2, MapPin, Share2, Smile } from 'react-feather';
+import { Picker } from 'emoji-mart';
 
 const ChatRoom = ({ room = 'general' }) => {
     const { user } = useAuth();
@@ -36,6 +35,7 @@ const ChatRoom = ({ room = 'general' }) => {
             chatService.offStatus('main');
             chatService.disconnect();
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [room]);
 
     const fetchMessages = async () => {
@@ -141,6 +141,7 @@ const ChatRoom = ({ room = 'general' }) => {
         }
     };
 
+    // eslint-disable-next-line no-unused-vars
     const handleReaction = async (messageId, emoji) => {
         try {
             await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/${messageId}/reaction`, {
@@ -299,13 +300,13 @@ const ChatRoom = ({ room = 'general' }) => {
                                         onClick={() => handlePinMessage(message._id)}
                                         className={`${message.isPinned ? 'text-yellow-500' : 'text-gray-500'} hover:text-yellow-500`}
                                     >
-                                        <Pin size={16} />
+                                        <MapPin size={16} />
                                     </button>
                                     <button
                                         onClick={() => handleForwardMessage(message._id, 'general')}
                                         className="text-gray-500 hover:text-green-500"
                                     >
-                                        <Forward size={16} />
+                                        <Share2 size={16} />
                                     </button>
                                 </div>
                             )}
@@ -356,13 +357,16 @@ const ChatRoom = ({ room = 'general' }) => {
                 {/* Emoji Picker */}
                 {showEmojiPicker && (
                     <div className="absolute bottom-20 right-4">
-                        <Picker
-                            data={data}
-                            onEmojiSelect={(emoji) => {
-                                setNewMessage(prev => prev + emoji.native);
-                                setShowEmojiPicker(false);
-                            }}
-                        />
+                        <div data-id="emoji-picker">
+                            <Picker
+                                title="Pick your emoji"
+                                emoji="point_up"
+                                onSelect={(emoji) => {
+                                    setNewMessage(prev => prev + emoji.native);
+                                    setShowEmojiPicker(false);
+                                }}
+                            />
+                        </div>
                     </div>
                 )}
             </div>

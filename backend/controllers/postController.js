@@ -17,7 +17,7 @@ exports.createPost = async (req, res) => {
         }
 
         // Get user details
-        const user = await User.findById(userId).select('username');
+        const user = await User.findById(userId).select('username profilePicture');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -26,6 +26,7 @@ exports.createPost = async (req, res) => {
         const newPost = new Post({
             userId,
             username: user.username,
+            profilePicture: user.profilePicture,
             title: title.trim(),
             content: content.trim(),
             type: type || 'post',
@@ -70,6 +71,8 @@ exports.getPosts = async (req, res) => {
         // Execute query with pagination
         const [posts, total] = await Promise.all([
             Post.find(query)
+                .populate('userId', 'username profilePicture')
+                .populate('comments.userId', 'username profilePicture')
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
@@ -77,9 +80,19 @@ exports.getPosts = async (req, res) => {
             Post.countDocuments(query)
         ]);
 
+        // Transform posts and their comments to ensure profile pictures are properly included
+        const transformedPosts = posts.map(post => ({
+            ...post,
+            profilePicture: post.profilePicture || (post.userId && post.userId.profilePicture),
+            comments: post.comments.map(comment => ({
+                ...comment,
+                profilePicture: comment.profilePicture || (comment.userId && comment.userId.profilePicture)
+            }))
+        }));
+
         res.json({
             success: true,
-            posts,
+            posts: transformedPosts,
             currentPage: page,
             totalPages: Math.ceil(total / limit),
             totalPosts: total
@@ -99,15 +112,28 @@ exports.getPostById = async (req, res) => {
             return res.status(400).json({ message: 'Invalid post ID' });
         }
 
-        const post = await Post.findById(id).lean();
+        const post = await Post.findById(id)
+            .populate('userId', 'username profilePicture')
+            .populate('comments.userId', 'username profilePicture')
+            .lean();
         
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
+        // Transform post and comments to include profile pictures
+        const transformedPost = {
+            ...post,
+            profilePicture: post.profilePicture || (post.userId && post.userId.profilePicture),
+            comments: post.comments.map(comment => ({
+                ...comment,
+                profilePicture: comment.profilePicture || (comment.userId && comment.userId.profilePicture)
+            }))
+        };
+
         res.json({
             success: true,
-            post
+            post: transformedPost
         });
     } catch (error) {
         console.error('Get post by ID error:', error);
@@ -209,7 +235,7 @@ exports.addComment = async (req, res) => {
         }
 
         // Get user details
-        const user = await User.findById(userId).select('username');
+        const user = await User.findById(userId).select('username profilePicture');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -221,20 +247,33 @@ exports.addComment = async (req, res) => {
                     comments: {
                         userId,
                         username: user.username,
-                        content: content.trim()
+                        profilePicture: user.profilePicture,
+                        content: content.trim(),
+                        createdAt: new Date()
                     }
                 }
             },
             { new: true }
-        );
+        ).populate('userId', 'username profilePicture')
+        .populate('comments.userId', 'username profilePicture');
 
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
+        // Transform post and comments to ensure profile pictures are properly included
+        const transformedPost = {
+            ...post.toObject(),
+            profilePicture: post.profilePicture || (post.userId && post.userId.profilePicture),
+            comments: post.comments.map(comment => ({
+                ...comment,
+                profilePicture: comment.profilePicture || (comment.userId && comment.userId.profilePicture)
+            }))
+        };
+
         res.json({
             success: true,
-            post
+            post: transformedPost
         });
     } catch (error) {
         console.error('Add comment error:', error);
@@ -243,7 +282,8 @@ exports.addComment = async (req, res) => {
 };
 
 // Like/Unlike a post
-exports.toggleLike = async (req, res) => {
+// Increment view count
+exports.incrementViews = async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -251,21 +291,89 @@ exports.toggleLike = async (req, res) => {
             return res.status(400).json({ message: 'Invalid post ID' });
         }
 
-        const post = await Post.findById(id);
+        const post = await Post.findByIdAndUpdate(
+            id,
+            { $inc: { views: 1 } },
+            { new: true }
+        ).select('views');
+
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        // Toggle like
-        const updatedPost = await Post.findByIdAndUpdate(
-            id,
-            { $inc: { likes: 1 } },
-            { new: true }
-        );
-
         res.json({
             success: true,
-            likes: updatedPost.likes
+            views: post.views
+        });
+    } catch (error) {
+        console.error('Increment views error:', error);
+        res.status(500).json({ message: 'Server error while updating views' });
+    }
+};
+
+exports.toggleLike = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        // Validate IDs
+        if (!isValidObjectId(id) || !isValidObjectId(userId)) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid post ID or user ID' 
+            });
+        }
+
+        // Find the post and check if it exists
+        const post = await Post.findById(id);
+        if (!post) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Post not found' 
+            });
+        }
+
+        // Ensure likes is an array
+        if (!Array.isArray(post.likes)) {
+            // If likes is not an array, initialize it
+            await Post.updateOne(
+                { _id: id },
+                { $set: { likes: [] } }
+            );
+            post.likes = [];
+        }
+
+        // Check if user has already liked the post
+        const hasLiked = Array.isArray(post.likes) && post.likes.some(like => like?.toString() === userId);
+
+        // Use atomic operation to update likes
+        const operation = hasLiked
+            ? { $pull: { likes: userId } }  // Remove like if already liked
+            : { $addToSet: { likes: userId } };  // Add like if not liked yet
+
+        const updatedPost = await Post.findByIdAndUpdate(
+            id,
+            operation,
+            {
+                new: true,  // Return updated document
+                runValidators: true  // Run schema validators
+            }
+        ).populate('userId', 'username profilePicture');
+
+        // Transform post to include profile picture
+        const transformedPost = {
+            ...updatedPost.toObject(),
+            profilePicture: updatedPost.profilePicture || (updatedPost.userId && updatedPost.userId.profilePicture)
+        };
+
+        // Return the updated like status
+        return res.json({
+            success: true,
+            message: hasLiked ? 'Post unliked successfully' : 'Post liked successfully',
+            post: transformedPost,
+            likes: transformedPost.likes,
+            likesCount: transformedPost.likes.length,
+            isLiked: !hasLiked  // Toggle the previous state
         });
     } catch (error) {
         console.error('Toggle like error:', error);

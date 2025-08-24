@@ -8,10 +8,12 @@ const {
     updatePost,
     deletePost,
     addComment,
-    toggleLike
+    toggleLike,
+    incrementViews
 } = require('../controllers/postController');
 
 // Post Routes
+router.post('/:id/view', incrementViews);
 router.post('/create', auth.authenticateUser, createPost); 
 router.get('/all', getPosts);            
 router.get('/:id', getPostById);

@@ -13,7 +13,7 @@ const {
 } = require('../controllers/chatController');
 
 // Chat Routes
-router.post('/', auth.authenticateUser, createMessage);
+router.post('/rooms', auth.authenticateUser, createMessage);
 router.get('/', auth.authenticateUser, getMessages);
 router.delete('/:id', auth.authenticateUser, deleteMessage);
 router.get('/user/:userId', auth.authenticateUser, getUserMessages);

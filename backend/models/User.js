@@ -11,7 +11,7 @@ const UserSchema = new mongoose.Schema({
     googleId: String, // Google OAuth ID
     profilePicture: String, // Google profile picture URL or uploaded image
     
-    // Enhanced profile fields (LeetCode-style)
+    // Enhanced profile fields
     username: { type: String, unique: true, sparse: true }, // Unique username like "Vishnu_Varma_4201"
     bio: { type: String, default: "Passionate developer with a strong foundation in programming." },
     location: { type: String, default: "India" },
@@ -35,7 +35,7 @@ const UserSchema = new mongoose.Schema({
     problemScores: [{
         problemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Problem' },
         score: { type: Number, default: 0 },
-        timeTaken: { type: Number, default: 0 }, // in seconds
+        timeTaken: { type: Number, default: 0 },
         attempts: { type: Number, default: 0 }
     }],
     
