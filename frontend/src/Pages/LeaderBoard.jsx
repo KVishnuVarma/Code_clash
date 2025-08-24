@@ -40,7 +40,8 @@ function LeaderBoard() {
             currentStreak: streakUser?.currentStreak || 0,
             longestStreak: streakUser?.longestStreak || 0,
             badge: streakUser?.badge || 'none',
-            solvedCount: user.solvedProblems?.length || 0
+            solvedCount: user.solvedProblems?.length || 0,
+            displayName: user.displayName || user.username || user.name // Use username as display name
           };
         });
 
@@ -62,6 +63,7 @@ function LeaderBoard() {
       setFilteredUsers(users);
     } else {
       const filtered = users.filter(user => 
+        user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (user.department && user.department.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -89,8 +91,10 @@ function LeaderBoard() {
     }
     
     setFilteredUsers(sorted);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterBy]);
 
+  // eslint-disable-next-line no-unused-vars
   const handleUserClick = (username) => {
     if (username) {
       navigate(`/profile/user/${username}`);
@@ -193,16 +197,23 @@ function LeaderBoard() {
                             {user.profilePicture ? (
                               <img 
                                 src={user.profilePicture} 
-                                alt={user.name} 
+                                alt={user.displayName} 
                                 className="w-10 h-10 rounded-full object-cover"
+                                onError={(e) => {
+                                  // Hide broken image and show fallback
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
                               />
-                            ) : (
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${themeColors.accentBg} ${themeColors.accentText}`}>
-                                <UserIcon className="w-5 h-5" />
-                              </div>
-                            )}
+                            ) : null}
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${themeColors.accentBg} ${themeColors.accentText} ${user.profilePicture ? 'hidden' : ''}`}>
+                              <UserIcon className="w-5 h-5" />
+                            </div>
                             <div>
-                              <div className={`font-medium ${themeColors.text}`}>{user.name}</div>
+                              <div className={`font-medium ${themeColors.text}`}>{user.displayName}</div>
+                              {user.username && user.username !== user.displayName && (
+                                <div className={`text-sm ${themeColors.textSecondary}`}>@{user.username}</div>
+                              )}
                             </div>
                           </Link>
                         </td>

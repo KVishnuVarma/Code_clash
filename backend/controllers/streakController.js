@@ -205,7 +205,7 @@ const useStreakFreeze = async (req, res) => {
 const getStreakLeaderboard = async (req, res) => {
     try {
         const users = await User.find({ role: 'user' })
-            .select('name email streak.currentStreak streak.longestStreak streak.badge points')
+            .select('name email streak.currentStreak streak.longestStreak streak.badge points profilePicture department username')
             .sort({ 'streak.currentStreak': -1, 'streak.longestStreak': -1, points: -1 })
             .limit(10);
 
@@ -216,7 +216,10 @@ const getStreakLeaderboard = async (req, res) => {
             currentStreak: user.streak.currentStreak,
             longestStreak: user.streak.longestStreak,
             badge: user.streak.badge,
-            points: user.points
+            points: user.points,
+            profilePicture: user.profilePicture,
+            department: user.department,
+            username: user.username
         }));
 
         res.json({ success: true, leaderboard });

@@ -79,7 +79,7 @@ const Leaderboard = () => {
                                             <td className="px-8 py-4 font-semibold text-2xl">
                                                 {index === 0 ? "1" : index === 1 ? "2" : index === 2 ? "3" : index + 1}
                                             </td>
-                                            <td className="px-8 py-4 text-xl">{user.name}</td>
+                                            <td className="px-8 py-4 text-xl">{user.displayName || user.username || user.name}</td>
                                             <td className="px-8 py-4 text-gray-300">{user.department || "N/A"}</td>
                                             <td className="px-8 py-4 font-bold text-2xl">{user.points}</td>
                                         </motion.tr>

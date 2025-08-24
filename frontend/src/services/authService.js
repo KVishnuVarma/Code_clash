@@ -170,13 +170,35 @@ export const profileService = {
     // Update profile picture
     async updateProfilePicture(token, profilePicture) {
         try {
+            // Validate and normalize the URL
+            let normalizedUrl = profilePicture.trim();
+            
+            // Check if it's a valid URL
+            try {
+                const url = new URL(normalizedUrl);
+                
+                // Ensure it's an HTTP/HTTPS URL
+                if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+                    throw new Error('Invalid URL protocol. Use http:// or https://');
+                }
+                
+                // For production, prefer HTTPS
+                if (import.meta.env.PROD && url.protocol === 'http:') {
+                    normalizedUrl = normalizedUrl.replace('http://', 'https://');
+                }
+                
+            // eslint-disable-next-line no-unused-vars
+            } catch (urlError) {
+                throw new Error('Please provide a valid image URL (e.g., https://example.com/image.jpg)');
+            }
+
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/profile-picture`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-auth-token': token
                 },
-                body: JSON.stringify({ profilePicture })
+                body: JSON.stringify({ profilePicture: normalizedUrl })
             });
 
             if (!response.ok) {
@@ -233,6 +255,23 @@ export const profileService = {
             return await response.json();
         } catch (error) {
             console.error('Error setting username:', error);
+            throw error;
+        }
+    },
+
+    // Check username availability
+    async checkUsernameAvailability(username) {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/check-username/${encodeURIComponent(username)}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to check username availability');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error checking username availability:', error);
             throw error;
         }
     }

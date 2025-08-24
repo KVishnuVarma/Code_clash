@@ -100,10 +100,16 @@ function PublicProfile() {
                           src={profileData.profilePicture} 
                           alt="Profile" 
                           className="w-24 h-24 rounded-full object-cover"
+                          onError={(e) => {
+                            // Hide broken image and show fallback
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        profileData?.name?.charAt(0)?.toUpperCase() || 'U'
-                      )}
+                      ) : null}
+                      <div className={`w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold ${profileData?.profilePicture ? 'hidden' : ''}`}>
+                        {profileData?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
                     </div>
                     {profileData?.role === 'admin' && (
                       <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1">
